@@ -1,115 +1,82 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
-import dotenv
-import logging
+import logbook
 import mimetypes
 import os
-import psycopg2
 import requests
-import urllib.parse
+import sys
 
+from dotenv import load_dotenv
 from datetime import datetime, timedelta
 from google.cloud import vision
+from logbook import Logger, StreamHandler
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ChatMember, Chat, MessageEntity, ChatAction
 from telegram.constants import *
 from telegram.error import BadRequest
 from telegram.ext import Updater, CommandHandler, MessageHandler, CallbackQueryHandler, Filters
 from telegram.ext.dispatcher import run_async
+from telegram.parsemode import ParseMode
 
-from feedback_bot import feedback_cov_handler
+from group_defender import *
 
-# Enable logging
-logging.basicConfig(format="[%(asctime)s] [%(levelname)s] %(message)s", datefmt="%Y-%m-%d %I:%M:%S %p",
-                    level=logging.INFO)
-LOGGER = logging.getLogger(__name__)
-
-dotenv.load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
-PORT = int(os.environ.get("PORT", "5000"))
+load_dotenv()
 APP_URL = os.environ.get("APP_URL")
+PORT = int(os.environ.get('PORT', '8443'))
+TELE_TOKEN = os.environ.get('TELE_TOKEN_BETA', os.environ.get('TELE_TOKEN'))
+DEV_TELE_ID = int(os.environ.get('DEV_TELE_ID'))
+GCP_KEY_FILE = os.environ.get('GCP_KEY_FILE')
+GCP_CRED = os.environ.get('GCP_CRED')
 
-TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN_BETA", os.environ.get("TELEGRAM_TOKEN"))
-DEV_TELE_ID = int(os.environ.get("DEV_TELE_ID"))
-DEV_EMAIL = os.environ.get("DEV_EMAIL", "sample@email.com")
-
-SCANNER_TOKEN = os.environ.get("SCANNER_TOKEN")
-GOOGLE_TOKEN = os.environ.get("GOOGLE_TOKEN")
-
-if os.environ.get("DATABASE_URL"):
-    urllib.parse.uses_netloc.append("postgres")
-    DB_URL = urllib.parse.urlparse(os.environ["DATABASE_URL"])
-
-    DB_NAME = DB_URL.path[1:]
-    DB_USER = DB_URL.username
-    DB_PW = DB_URL.password
-    DB_HOST = DB_URL.hostname
-    DB_PORT = DB_URL.port
-else:
-    DB_NAME = os.environ.get("DB_NAME")
-    DB_USER = os.environ.get("DB_USER")
-    DB_PW = os.environ.get("DB_PW")
-    DB_HOST = os.environ.get("DB_HOST")
-    DB_PORT = os.environ.get("DB_PORT")
-
-FILE_TYPE_NAMES = {"aud": "audio", "doc": "document", "img": "image", "vid": "video", "url": "url"}
-VISION_IMAGE_SIZE_LIMIT = 4000000
-SAFE_ANN_THRESHOLD = 3
-MSG_LIFETIME = 1  # 1 day
+if GCP_CRED is not None:
+    with open(GCP_KEY_FILE, 'w') as f:
+        f.write(GCP_CRED)
 
 
 def main():
-    make_db_tables()
+    # Setup logging
+    logbook.set_datetime_format('local')
+    format_string = '[{record.time:%Y-%m-%d %H:%M:%S}] {record.level_name}: {record.message}'
+    StreamHandler(sys.stdout, format_string=format_string).push_application()
+    log = Logger()
 
-    # Create the EventHandler and pass it your bot"s token.
-    updater = Updater(TELEGRAM_TOKEN, request_kwargs={"connect_timeout": 20, "read_timeout": 20})
+    # Create the EventHandler and pass it your bot's token.
+    updater = Updater(
+        TELE_TOKEN, use_context=True, request_kwargs={'connect_timeout': TIMEOUT, 'read_timeout': TIMEOUT})
 
     job_queue = updater.job_queue
     job_queue.run_repeating(delete_expired_msg, timedelta(days=MSG_LIFETIME), 0)
 
     # Get the dispatcher to register handlers
-    dp = updater.dispatcher
+    dispatcher = updater.dispatcher
+
     # on different commands - answer in Telegram
-    dp.add_handler(CommandHandler("start", start_msg))
-    dp.add_handler(CommandHandler("help", help_msg))
-    dp.add_handler(CommandHandler("donate", donate_msg))
-    dp.add_handler(MessageHandler(Filters.status_update.new_chat_members, group_greeting))
-    dp.add_handler(MessageHandler((Filters.audio | Filters.document | Filters.photo | Filters.video), check_file))
-    dp.add_handler(MessageHandler(Filters.entity(MessageEntity.URL), check_url))
-    dp.add_handler(CallbackQueryHandler(inline_button_handler))
-    dp.add_handler(feedback_cov_handler())
-    dp.add_handler(CommandHandler("send", send, Filters.user(DEV_TELE_ID), pass_args=True))
+    dispatcher.add_handler(CommandHandler("start", start_msg))
+    dispatcher.add_handler(CommandHandler("help", help_msg))
+    dispatcher.add_handler(CommandHandler("donate", send_payment_options))
+    dispatcher.add_handler(MessageHandler(Filters.status_update.new_chat_members, group_greeting))
+    dispatcher.add_handler(MessageHandler((Filters.audio | Filters.document | Filters.photo | Filters.video), check_file))
+    dispatcher.add_handler(MessageHandler(Filters.entity(MessageEntity.URL), check_url))
+    dispatcher.add_handler(CallbackQueryHandler(inline_button_handler))
+    dispatcher.add_handler(feedback_cov_handler())
+    dispatcher.add_handler(CommandHandler("send", send, Filters.user(DEV_TELE_ID), pass_args=True))
 
     # log all errors
-    dp.add_error_handler(error)
+    dispatcher.add_error_handler(error_callback)
 
     # Start the Bot
     if APP_URL:
         updater.start_webhook(listen="0.0.0.0",
                               port=PORT,
-                              url_path=TELEGRAM_TOKEN)
-        updater.bot.set_webhook(APP_URL + TELEGRAM_TOKEN)
+                              url_path=TELE_TOKEN)
+        updater.bot.set_webhook(APP_URL + TELE_TOKEN)
+        log.notice('Bot started webhook')
     else:
         updater.start_polling()
+        log.notice('Bot started polling')
 
     # Run the bot until the you presses Ctrl-C or the process receives SIGINT,
     # SIGTERM or SIGABRT. This should be used most of the time, since
     # start_polling() is non-blocking and will stop the bot gracefully.
     updater.idle()
-
-
-# Connect to database
-def conn_db():
-    return psycopg2.connect(database=DB_NAME, user=DB_USER, password=DB_PW, host=DB_HOST, port=DB_PORT)
-
-
-# Make database tables
-def make_db_tables():
-    with conn_db() as conn:
-        with conn.cursor() as cur:
-            cur.execute("create table if not exists msg_info ("
-                        "chat_id bigint not null, msg_id bigint not null, primary key(chat_id, msg_id), "
-                        "user_name text, file_id text, file_type text, msg_text text, expire timestamptz)")
 
 
 # Delete expired message
@@ -120,43 +87,56 @@ def delete_expired_msg(bot, job):
             cur.execute("delete from msg_info where expire < %s",  (curr_datetime,))
 
 
-# Send start message
-@run_async
-def start_msg(bot, update):
+def start_msg(update, _):
+    """
+    Send start message
+    Args:
+        update: the update object
+        _: unused variable
+
+    Returns:
+        None
+    """
     text = "Welcome to Group Guardian!\n\n"
     text += "I can protect you and your group from files or links that may contain threats, and photos or urls of " \
             "photos that may contain adult, spoof, medical, violence or racy content.\n\n"
     text += "Type /help to see how to use me."
 
-    update.message.reply_text(text)
+    update.message.reply_text(
+        'Welcome to Group Defender!\n\n*Features*\n'
+        '- Filter photos and links of photos that are NSFW'
+        '- Filter files and links that may contain threats\n\n'
+        'Type /help to see how to use Group Defender.', parse_mode=ParseMode.MARKDOWN)
 
 
-# Send help message
 @run_async
-def help_msg(bot, update):
-    text = "If you're just chatting with me, simply send me a file or a url and I'll tell you if it is safe. " \
-           "If it is a photo, I'll also tell you if it is appropriate.\n\n"
-    text += "If you want me to guard your group, add me into your group and set me as an admin. " \
-            "I'll check every file and url sent to the group and delete it if it is not safe.\n\n"
-    text += "As a group admin, you can choose to undo the message that I deleted to review it.\n\n"
-    text += "Please note that I can only download files up to 20 MB in size. And for photo content checking, " \
-            "I can only handle photos up to 4 MB in size. Any files that have a size greater than the limits " \
-            "will be ignored in groups."
+def help_msg(update, _):
+    """
+    Send help message
+    Args:
+        update: the update object
+        _: unused variable
 
-    keyboard = [[InlineKeyboardButton("Join Channel", "https://t.me/grpguardianbotdev"),
-                 InlineKeyboardButton("Rate me", "https://t.me/storebot?start=grpguardianbot")]]
+    Returns:
+        None
+    """
+
+    keyboard = [[InlineKeyboardButton('Join Channel', f'https://t.me/grpdefbotdev'),
+                 InlineKeyboardButton('Support PDF Bot', callback_data=PAYMENT)]]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    update.message.reply_text(text, reply_markup=reply_markup)
+    update.message.reply_text(
+        'If you\'re just chatting with me, simply send me a photo, a file or a url and '
+        'I\'ll tell you if it is safe or NSFW.\n\n'
+        'If you want me to defend your group, add me into your group and set me as an admin. '
+        'I\'ll filter all the unsafe content.', reply_markup=reply_markup)
 
 
-# Send donate message
 @run_async
-def donate_msg(bot, update):
-    text = f"Want to help keep me online? Please donate to {DEV_EMAIL} through PayPal.\n\n" \
-           f"Donations help me to stay on my server and keep running."
-
-    update.message.reply_text(text)
+def process_callback_query(update, context):
+    query = update.callback_query
+    if query.data == PAYMENT:
+        send_payment_options(update, context, query.from_user.id)
 
 
 # Greet when bot is added to group and asks for bot admin
@@ -480,20 +460,30 @@ def inline_button_handler(bot, update):
             pass
 
 
-# Send a message to a specified user
-def send(bot, update, args):
-    tele_id = int(args[0])
-    message = " ".join(args[1:])
+def send(update, context):
+    """
+    Send a message to a user
+    Args:
+        update: the update object
+        context: the context object
+
+    Returns:
+        None
+    """
+    tele_id = int(context.args[0])
+    message = ' '.join(context.args[1:])
 
     try:
-        bot.send_message(tele_id, message)
+        context.bot.send_message(tele_id, message)
     except Exception as e:
-        LOGGER.exception(e)
-        bot.send_message(DEV_TELE_ID, "Failed to send message")
+        log = Logger()
+        log.error(e)
+        update.message.reply_text(DEV_TELE_ID, 'Failed to send message')
 
 
-def error(bot, update, error):
-    LOGGER.warning("Update '%s' caused error '%s'" % (update, error))
+def error_callback(update, context):
+    log = Logger()
+    log.error(f'Update "{update}" caused error "{context.error}"')
 
 
 if __name__ == "__main__":
