@@ -3,11 +3,11 @@ from telegram.constants import MAX_FILESIZE_DOWNLOAD
 from telegram.ext.dispatcher import run_async
 
 from group_defender.constants import AUDIO, DOCUMENT, PHOTO, VIDEO
-from group_defender.defend import process_file
+from group_defender.scan_file import check_file
 
 
 @run_async
-def check_file(update, context):
+def process_file(update, context):
     # Check if bot in group and if bot is a group admin, if not, files will not be checked
     if update.message.chat.type in (Chat.GROUP, Chat.SUPERGROUP) and \
             context.bot.get_chat_member(update.message.chat_id, context.bot.id).status != ChatMember.ADMINISTRATOR:
@@ -36,7 +36,7 @@ def check_file(update, context):
     tele_file = file.get_file()
     file_mime_type = 'image' if file_type == PHOTO else file.mime_type
 
-    process_file(update, context, tele_file, file_type)
+    check_file(update, context, tele_file, file_type)
     # _, text = is_malware_and_vision_safe(bot, update, tele_file.file_path, file_type, file_mime_type, file_size,
     #                                      file.file_id)
     # if text:

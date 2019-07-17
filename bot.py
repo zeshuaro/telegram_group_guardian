@@ -53,7 +53,7 @@ def main():
     dispatcher.add_handler(CommandHandler("help", help_msg))
     dispatcher.add_handler(CommandHandler("donate", send_payment_options))
     dispatcher.add_handler(MessageHandler(Filters.status_update.new_chat_members, greet_group))
-    dispatcher.add_handler(MessageHandler((Filters.audio | Filters.document | Filters.photo | Filters.video), check_file))
+    dispatcher.add_handler(MessageHandler((Filters.audio | Filters.document | Filters.photo | Filters.video), process_file))
     dispatcher.add_handler(MessageHandler(Filters.entity(MessageEntity.URL), check_url))
     dispatcher.add_handler(CallbackQueryHandler(inline_button_handler))
     dispatcher.add_handler(feedback_cov_handler())
