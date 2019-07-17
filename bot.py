@@ -6,7 +6,7 @@ import sys
 
 from dotenv import load_dotenv
 from datetime import datetime, timedelta
-from google.cloud import vision
+# from google.cloud import vision
 from logbook import Logger, StreamHandler
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ChatMember, Chat, MessageEntity, ChatAction
@@ -42,8 +42,8 @@ def main():
     updater = Updater(
         TELE_TOKEN, use_context=True, request_kwargs={'connect_timeout': TIMEOUT, 'read_timeout': TIMEOUT})
 
-    job_queue = updater.job_queue
-    job_queue.run_repeating(delete_expired_msg, timedelta(days=MSG_LIFETIME), 0)
+    # job_queue = updater.job_queue
+    # job_queue.run_repeating(delete_expired_msg, timedelta(days=MSG_LIFETIME), 0)
 
     # Get the dispatcher to register handlers
     dispatcher = updater.dispatcher
@@ -52,7 +52,7 @@ def main():
     dispatcher.add_handler(CommandHandler("start", start_msg))
     dispatcher.add_handler(CommandHandler("help", help_msg))
     dispatcher.add_handler(CommandHandler("donate", send_payment_options))
-    dispatcher.add_handler(MessageHandler(Filters.status_update.new_chat_members, group_greeting))
+    dispatcher.add_handler(MessageHandler(Filters.status_update.new_chat_members, greet_group))
     dispatcher.add_handler(MessageHandler((Filters.audio | Filters.document | Filters.photo | Filters.video), check_file))
     dispatcher.add_handler(MessageHandler(Filters.entity(MessageEntity.URL), check_url))
     dispatcher.add_handler(CallbackQueryHandler(inline_button_handler))
@@ -104,8 +104,8 @@ def start_msg(update, _):
 
     update.message.reply_text(
         'Welcome to Group Defender!\n\n*Features*\n'
-        '- Filter photos and links of photos that are NSFW'
-        '- Filter files and links that may contain threats\n\n'
+        '- Filter files and links that may contain virus or malwares\n'
+        '- Filter photos and links of photos that are NSFW\n\n'
         'Type /help to see how to use Group Defender.', parse_mode=ParseMode.MARKDOWN)
 
 
@@ -122,7 +122,7 @@ def help_msg(update, _):
     """
 
     keyboard = [[InlineKeyboardButton('Join Channel', f'https://t.me/grpdefbotdev'),
-                 InlineKeyboardButton('Support PDF Bot', callback_data=PAYMENT)]]
+                 InlineKeyboardButton('Support Group Defender', callback_data=PAYMENT)]]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     update.message.reply_text(
@@ -141,168 +141,22 @@ def process_callback_query(update, context):
 
 # Greet when bot is added to group and asks for bot admin
 @run_async
-def group_greeting(bot, update):
+def greet_group(update, context):
+    """
+    Send a greeting message when the bot is added to a group
+    Args:
+        update: the update object
+        context: the context object
+
+    Returns:
+        None
+    """
     for user in update.message.new_chat_members:
-        if user.id == bot.id:
-            text = "Hello everyone! I am Group Guardian. Please set me as one of the admins " \
-                   "so that I can start guarding your group."
-            bot.send_message(update.message.chat.id, text)
-
-
-# Check for file
-@run_async
-def check_file(bot, update):
-    # Check if bot in group and if bot is a group admin, if not, files will not be checked
-    if update.message.chat.type in (Chat.GROUP, Chat.SUPERGROUP) and \
-            bot.get_chat_member(update.message.chat_id, bot.id).status != ChatMember.ADMINISTRATOR:
-        update.message.reply_text("Please set me as a group admin so that I can start checking files like this.")
-
-        return
-
-    # Grab the received file
-    update.message.chat.send_action(ChatAction.TYPING)
-    files = [update.message.document, update.message.audio, update.message.video, update.message.photo]
-    index, file = next(x for x in enumerate(files) if x[1] is not None)
-
-    file_types = ("doc", "aud", "vid", "img")
-    file_type = file_types[index]
-    file = file[-1] if file_type == "img" else file
-    file_size = file.file_size
-
-    # Check if file is too large for bot to download
-    if file_size > MAX_FILESIZE_DOWNLOAD:
-        if update.message.chat.type == Chat.PRIVATE:
-            text = f"Your {FILE_TYPE_NAMES[file_type]} is too large for me to download and process, sorry."
-            update.message.reply_text(text)
-
-        return
-
-    file_id = file.file_id
-    tele_file = bot.get_file(file_id)
-    file_mime_type = "image" if file_type == "img" else file.mime_type
-
-    _, text = is_malware_and_vision_safe(bot, update, tele_file.file_path, file_type, file_mime_type, file_size,
-                                         file_id)
-    if text:
-        update.message.reply_text(text, quote=True)
-
-
-# Master function for checking malware and vision
-def is_malware_and_vision_safe(bot, update, file_url, file_type, file_mime_type, file_size, file_id=None):
-    if file_id is None and file_url is None:
-        raise ValueError("You must provide either file_id or file_url")
-
-    # Setup return variables
-    safe = True
-    reply_text = ""
-
-    # Grab info from message
-    chat_type = update.message.chat.type
-    chat_id = update.message.chat_id
-    msg_id = update.message.message_id
-    user_name = update.message.from_user.first_name
-    msg_text = update.message.text
-
-    if not is_malware_safe(file_url):
-        safe = False
-
-        # Delete message if it is a group chat
-        if chat_type in (Chat.GROUP, Chat.SUPERGROUP):
-            store_msg(chat_id, msg_id, user_name, file_id, file_type, msg_text)
-
-            text = f"I deleted a {FILE_TYPE_NAMES[file_type]} that contains threats (sent by {user_name})."
-            keyboard = [[InlineKeyboardButton(text="Undo", callback_data=f"undo,{msg_id}")]]
-            reply_markup = InlineKeyboardMarkup(keyboard)
-
-            update.message.delete()
-            bot.send_message(chat_id, text, reply_markup=reply_markup)
-        else:
-            if file_id:
-                reply_text += "I think it contains threats, don't download or open it."
-            else:
-                reply_text += f"{file_url}\n⬆ I think it contains threats, don't download or open it."
-    else:
-        if chat_type == Chat.PRIVATE:
-            if file_id:
-                reply_text += "I think it doesn't contain threats. "
-            else:
-                reply_text += f"{file_url}\n⬆ I think it doesn't contain threats. "
-
-        if file_type == "img" or file_mime_type.startswith("image"):
-            if file_size <= VISION_IMAGE_SIZE_LIMIT:
-                vision_safe, vision_results = is_vision_safe(file_url)
-                safe_ann_index = next((x[0] for x in enumerate(vision_results) if x[1] > SAFE_ANN_THRESHOLD), 0)
-                safe_ann_value = vision_results[safe_ann_index]
-
-                if not vision_safe:
-                    safe = False
-                    safe_ann_likelihoods = ("unknown", "very likely", "unlikely", "possible", "likely", "very likely")
-                    safe_ann_types = ("adult", "spoof", "medical", "violence", "racy")
-
-                    # Delete message if it is a group chat
-                    if chat_type in (Chat.GROUP, Chat.SUPERGROUP):
-                        store_msg(chat_id, msg_id, user_name, file_id, file_type, msg_text)
-
-                        if file_id:
-                            text = "I deleted a photo that's "
-                        else:
-                            text = "I deleted a message which contains a link of photo that's "
-
-                        text += f"{safe_ann_likelihoods[safe_ann_value]} to contain " \
-                                f"{safe_ann_types[safe_ann_index]} content (sent by {user_name})."
-
-                        keyboard = [[InlineKeyboardButton(text="Undo", callback_data=f"undo,{msg_id}")]]
-                        reply_markup = InlineKeyboardMarkup(keyboard)
-
-                        update.message.delete()
-                        bot.send_message(chat_id, text, reply_markup=reply_markup)
-                    else:
-                        reply_text += f"But I think it is {safe_ann_likelihoods[safe_ann_value]} " \
-                                      f"to contain {safe_ann_types[safe_ann_index]} content."
-                else:
-                    if chat_type == Chat.PRIVATE:
-                        reply_text += "And I think it doesn't contain any inappropriate content."
-            else:
-                if update.message.chat.type == Chat.PRIVATE:
-                    reply_text += "But it is too large for me to check for inappropriate content."
-
-    return safe, reply_text
-
-
-# Check if the file is malware safe
-def is_malware_safe(file_url):
-    safe = True
-    url = "https://beta.attachmentscanner.com/requests"
-    headers = {
-        "content-type": "application/json",
-        "authorization": f"bearer {SCANNER_TOKEN}"
-    }
-    json = {"url": file_url}
-    response = requests.post(url=url, headers=headers, json=json)
-
-    if response.status_code == 200:
-        results = response.json()
-        if "matches" in results and results["matches"]:
-            safe = False
-
-    return safe
-
-
-# Check if the image is vision safe
-def is_vision_safe(file_url):
-    safe = True
-    client = vision.ImageAnnotatorClient()
-    image = vision.types.Image()
-    image.source.image_uri = file_url
-    response = client.safe_search_detection(image=image)
-
-    safe_ann = response.safe_search_annotation
-    safe_ann_results = [safe_ann.adult, safe_ann.spoof, safe_ann.medical, safe_ann.violence, safe_ann.racy]
-
-    if any(x > SAFE_ANN_THRESHOLD for x in safe_ann_results):
-        safe = False
-
-    return safe, safe_ann_results
+        if user.id == context.bot.id:
+            context.bot.send_message(
+                update.message.chat.id,
+                'Hello everyone! I am Group Defender. Set me as one of the admins so that '
+                'I can start defending your group.')
 
 
 # Store message information on Google Datastore

@@ -1,10 +1,9 @@
-FILE_TYPE_NAMES = {"aud": "audio", "doc": "document", "img": "image", "vid": "video", "url": "url"}
 VISION_IMAGE_SIZE_LIMIT = 4000000
 SAFE_ANN_THRESHOLD = 3
 MSG_LIFETIME = 1  # 1 day
 TIMEOUT = 20
 
-# Payment Constants
+# Payment constants
 PAYMENT = 'payment'
 PAYMENT_PAYLOAD = 'payment_payload'
 PAYMENT_CURRENCY = 'USD'
@@ -16,3 +15,16 @@ PAYMENT_MEAL = 'Meal 🍲 ($10)'
 PAYMENT_CUSTOM = 'Say Awesome 🤩 (Custom)'
 PAYMENT_DICT = {PAYMENT_THANKS: 1, PAYMENT_COFFEE: 3, PAYMENT_BEER: 5, PAYMENT_MEAL: 10}
 WAIT_PAYMENT = 0
+
+# File types
+AUDIO = 'audio'
+DOCUMENT = 'document'
+PHOTO = 'photo'
+VIDEO = 'video'
+
+# Attachment Scanner constants
+OK = 'ok'
+FOUND = 'found'
+WARNING = 'warning'
+PENDING = 'pending'
+FAILED = 'failed'
