@@ -1,10 +1,9 @@
 import os
 import requests
-import tempfile
 
 from dotenv import load_dotenv
 from logbook import Logger
-from telegram import Chat, InlineKeyboardMarkup, InlineKeyboardButton
+from telegram import Chat, InlineKeyboardMarkup, InlineKeyboardButton, ChatAction
 
 from group_defender.constants import OK, FOUND, WARNING, PENDING, FAILED
 
@@ -12,8 +11,9 @@ load_dotenv()
 SCANNER_TOKEN = os.environ.get('SCANNER_TOKEN')
 
 
-def check_file(update, context, file, file_type):
-    status, matches = scan_file(file)
+def check_file(update, context, file_name, file_type):
+    update.message.chat.send_action(ChatAction.TYPING)
+    status, matches = scan_file(file_name)
     chat_type = update.message.chat.type
     chat_id = update.message.chat_id
     msg_id = update.message.message_id
@@ -51,15 +51,12 @@ def check_file(update, context, file, file_type):
         update.message.reply_text(f'Something went wrong.', reply_markup=reply_markup)
 
 
-def scan_file(file):
+def scan_file(file_name):
     status = matches = None
     url = 'https://beta.attachmentscanner.com/scans'
     headers = {'authorization': f'bearer {SCANNER_TOKEN}'}
-
-    with tempfile.NamedTemporaryFile() as tf:
-        file.download(tf.name)
-        files = {'file': open(tf.name, 'rb')}
-        r = requests.post(url=url, headers=headers, files=files)
+    files = {'file': open(file_name, 'rb')}
+    r = requests.post(url=url, headers=headers, files=files)
 
     if r.status_code == 200:
         results = r.json()

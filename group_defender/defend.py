@@ -1,6 +1,3 @@
-import os
-
-from dotenv import load_dotenv
 from telegram import Chat, InlineKeyboardMarkup, InlineKeyboardButton
 
 
@@ -84,20 +81,3 @@ def is_malware_and_vision_safe(bot, update, file_url, file_type, file_mime_type,
                     reply_text += 'But it is too large for me to check for inappropriate content.'
 
     return safe, reply_text
-
-
-# Check if the image is vision safe
-def is_vision_safe(file_url):
-    safe = True
-    client = vision.ImageAnnotatorClient()
-    image = vision.types.Image()
-    image.source.image_uri = file_url
-    response = client.safe_search_detection(image=image)
-
-    safe_ann = response.safe_search_annotation
-    safe_ann_results = [safe_ann.adult, safe_ann.spoof, safe_ann.medical, safe_ann.violence, safe_ann.racy]
-
-    if any(x > SAFE_ANN_THRESHOLD for x in safe_ann_results):
-        safe = False
-
-    return safe, safe_ann_results

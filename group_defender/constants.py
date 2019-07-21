@@ -1,5 +1,4 @@
 VISION_IMAGE_SIZE_LIMIT = 4000000
-SAFE_ANN_THRESHOLD = 3
 MSG_LIFETIME = 1  # 1 day
 TIMEOUT = 20
 
@@ -28,3 +27,8 @@ FOUND = 'found'
 WARNING = 'warning'
 PENDING = 'pending'
 FAILED = 'failed'
+
+# Google Vision constants
+SAFE_ANN_LIKELIHOODS = ['unknown', 'very unlikely', 'unlikely', 'possible', 'likely', 'very likely']
+SAFE_ANN_TYPES = ['adult', 'spoof', 'medical', 'violence', 'racy']
+SAFE_ANN_THRESHOLD = 3

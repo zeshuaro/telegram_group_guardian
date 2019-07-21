@@ -1,9 +1,12 @@
-from telegram import Chat, ChatMember, ChatAction
+import tempfile
+
+from telegram import Chat, ChatMember
 from telegram.constants import MAX_FILESIZE_DOWNLOAD
 from telegram.ext.dispatcher import run_async
 
 from group_defender.constants import AUDIO, DOCUMENT, PHOTO, VIDEO
 from group_defender.scan_file import check_file
+from group_defender.scan_photo import check_photo
 
 
 @run_async
@@ -16,7 +19,6 @@ def process_file(update, context):
         return
 
     # Get the received file
-    update.message.chat.send_action(ChatAction.TYPING)
     files = [update.message.audio, update.message.document, update.message.photo, update.message.video]
     index, file = next(x for x in enumerate(files) if x[1] is not None)
 
@@ -33,11 +35,11 @@ def process_file(update, context):
 
         return
 
-    tele_file = file.get_file()
-    file_mime_type = 'image' if file_type == PHOTO else file.mime_type
+    with tempfile.NamedTemporaryFile() as tf:
+        file_name = tf.name
+        file.get_file().download(file_name)
+        check_file(update, context, file_name, file_type)
 
-    check_file(update, context, tele_file, file_type)
-    # _, text = is_malware_and_vision_safe(bot, update, tele_file.file_path, file_type, file_mime_type, file_size,
-    #                                      file.file_id)
-    # if text:
-    #     update.message.reply_text(text, quote=True)
+        file_mime_type = 'image' if file_type == PHOTO else file.mime_type
+        if file_type == 'img' or file_mime_type.startswith('image'):
+            check_photo(update, context, file_name)
