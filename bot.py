@@ -7,7 +7,7 @@ import sys
 from dotenv import load_dotenv
 from datetime import datetime, timedelta
 from logbook import Logger, StreamHandler
-
+from logbook.compat import redirect_logging
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ChatMember, Chat, MessageEntity, ChatAction
 from telegram.error import BadRequest
 from telegram.ext import Updater, CommandHandler, MessageHandler, CallbackQueryHandler, Filters
@@ -31,9 +31,10 @@ if GCP_CRED is not None:
 
 def main():
     # Setup logging
+    redirect_logging()
     logbook.set_datetime_format('local')
     format_string = '[{record.time:%Y-%m-%d %H:%M:%S}] {record.level_name}: {record.message}'
-    StreamHandler(sys.stdout, format_string=format_string).push_application()
+    StreamHandler(sys.stdout, format_string=format_string, level='INFO').push_application()
     log = Logger()
 
     # Create the EventHandler and pass it your bot's token.
