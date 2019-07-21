@@ -1,5 +1,3 @@
-import tempfile
-
 from google.cloud import vision
 from telegram import Chat, InlineKeyboardButton, InlineKeyboardMarkup, ChatAction
 
@@ -8,8 +6,6 @@ from group_defender.constants import SAFE_ANN_LIKELIHOODS, SAFE_ANN_TYPES, SAFE_
 
 def check_photo(update, context, file_name):
     update.message.chat.send_action(ChatAction.TYPING)
-    # if file_type == 'img' or file_mime_type.startswith('image'):
-    #     if file_size <= VISION_IMAGE_SIZE_LIMIT:
     is_safe, results = scan_photo(file_name)
     safe_ann_index = next((x[0] for x in enumerate(results) if x[1] > SAFE_ANN_THRESHOLD), 0)
     safe_ann_value = results[safe_ann_index]

@@ -6,11 +6,9 @@ import sys
 
 from dotenv import load_dotenv
 from datetime import datetime, timedelta
-# from google.cloud import vision
 from logbook import Logger, StreamHandler
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ChatMember, Chat, MessageEntity, ChatAction
-from telegram.constants import *
 from telegram.error import BadRequest
 from telegram.ext import Updater, CommandHandler, MessageHandler, CallbackQueryHandler, Filters
 from telegram.ext.dispatcher import run_async
