@@ -1,14 +1,12 @@
 import logbook
-import mimetypes
 import os
-import requests
 import sys
 
 from dotenv import load_dotenv
 from datetime import datetime, timedelta
 from logbook import Logger, StreamHandler
 from logbook.compat import redirect_logging
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ChatMember, Chat, MessageEntity, ChatAction
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ChatMember, Chat, MessageEntity
 from telegram.error import BadRequest
 from telegram.ext import Updater, CommandHandler, MessageHandler, CallbackQueryHandler, Filters
 from telegram.ext.dispatcher import run_async
@@ -52,7 +50,8 @@ def main():
     dispatcher.add_handler(CommandHandler("help", help_msg))
     dispatcher.add_handler(CommandHandler("donate", send_payment_options))
     dispatcher.add_handler(MessageHandler(Filters.status_update.new_chat_members, greet_group))
-    dispatcher.add_handler(MessageHandler((Filters.audio | Filters.document | Filters.photo | Filters.video), process_file))
+    dispatcher.add_handler(MessageHandler(
+        (Filters.audio | Filters.document | Filters.photo | Filters.video), process_file))
     dispatcher.add_handler(MessageHandler(Filters.entity(MessageEntity.URL), check_url))
     dispatcher.add_handler(CallbackQueryHandler(inline_button_handler))
     dispatcher.add_handler(feedback_cov_handler())
@@ -165,88 +164,6 @@ def store_msg(chat_id, msg_id, user_name, file_id, file_type, msg_text):
         with conn.cursor() as cur:
             cur.execute("insert into msg_info values (%s, %s, %s, %s, %s, %s, %s)",
                         (chat_id, msg_id, user_name, file_id, file_type, msg_text, expire))
-
-
-# Check for url
-@run_async
-def check_url(bot, update):
-    # Check if bot in group and if bot is a group admin, if not, urls will not be checked
-    if update.message.chat.type in (Chat.GROUP, Chat.SUPERGROUP) and \
-            bot.get_chat_member(update.message.chat_id, bot.id).status != ChatMember.ADMINISTRATOR:
-        update.message.reply_text("Please set me as a group admin so that I can start checking urls like this.")
-
-        return
-
-    update.message.chat.send_action(ChatAction.TYPING)
-    chat_type = update.message.chat.type
-    chat_id = update.message.chat_id
-    msg_id = update.message.message_id
-    user_name = update.message.from_user.first_name
-    msg_text = update.message.text
-
-    entities = update.message.parse_entities([MessageEntity.URL])
-    urls = entities.values()
-    reply_text = ""
-
-    for url in urls:
-        mime_type = mimetypes.guess_type(url)[0]
-        if mime_type:
-            response = requests.get(url)
-            if response.status_code == 200:
-                safe, text = is_malware_and_vision_safe(bot, update, url, "url", mime_type, len(response.content))
-                reply_text += f"{text}\n\n"
-
-                if not safe and chat_type in (Chat.GROUP, Chat.SUPERGROUP):
-                    break
-            else:
-                if chat_type == Chat.PRIVATE:
-                    reply_text += f"{url}\n⬆ I couldn't check it as I couldn't access it.\n\n"
-        else:
-            if not is_url_safe(url):
-                # Delete message if it is a group chat
-                if chat_type in (Chat.GROUP, Chat.SUPERGROUP):
-                    store_msg(chat_id, msg_id, user_name, None, "url", msg_text)
-
-                    text = f"I deleted a message that contains urls with threats (sent by {user_name})."
-                    keyboard = [[InlineKeyboardButton(text="Undo", callback_data=f"undo,{msg_id}")]]
-                    reply_markup = InlineKeyboardMarkup(keyboard)
-
-                    update.message.delete()
-                    bot.send_message(chat_id, text, reply_markup=reply_markup)
-                    break
-                else:
-                    reply_text += f"{url}\n⬆ I think it contains threats, don't open it.\n\n"
-            else:
-                if chat_type == Chat.PRIVATE:
-                    reply_text += f"{url}\n⬆ I think it is safe.\n\n"
-
-    if chat_type == Chat.PRIVATE:
-        update.message.reply_text(reply_text, quote=True, disable_web_page_preview=True)
-
-
-# Check if url is safe
-def is_url_safe(url):
-    safe_url = True
-
-    safe_browsing_url = "https://safebrowsing.googleapis.com/v4/threatMatches:find"
-    headers = {"Content-Type": "application/json"}
-    params = {"key": GOOGLE_TOKEN}
-    json = {
-        "threatInfo": {
-            "threatTypes": ["MALWARE", "SOCIAL_ENGINEERING"],
-            "platformTypes": ["ANY_PLATFORM"],
-            "threatEntryTypes": ["URL"],
-            "threatEntries": [{"url": url}]
-        }
-    }
-    response = requests.post(url=safe_browsing_url, headers=headers, params=params, json=json)
-
-    if response.status_code == 200:
-        results = response.json()
-        if "matches" in results and results["matches"]:
-            safe_url = False
-
-    return safe_url
 
 
 # Handle inline button
