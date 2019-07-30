@@ -35,10 +35,15 @@ def check_photo(update, context, file_name):
             update.message.reply_text('And I think it doesn\'t contain any NSFW content.')
 
 
-def scan_photo(file_name):
+def scan_photo(file_name=None, file_url=None):
+    if file_name is not None:
+        img_src = {'content': open(file_name, 'rb').read()}
+    else:
+        img_src = {'source': {'image_uri': file_url}}
+
     client = vision.ImageAnnotatorClient()
     response = client.annotate_image({
-        'image': {'content': open(file_name, 'rb').read()},
+        'image': img_src,
         'features': [{'type': vision.enums.Feature.Type.SAFE_SEARCH_DETECTION}],
     })
 
