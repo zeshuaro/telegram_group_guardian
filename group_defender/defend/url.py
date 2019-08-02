@@ -9,14 +9,17 @@ from requests.exceptions import ConnectionError
 from telegram import Chat, ChatAction, ChatMember, MessageEntity, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext.dispatcher import run_async
 
+from group_defender.defend.file import scan_file
+from group_defender.defend.photo import scan_photo
+
+
 load_dotenv()
 GOOGLE_TOKEN = os.environ.get('GOOGLE_TOKEN')
 
 
-# Check for url
 @run_async
 def check_url(update, context):
-    # Check if bot in group and if bot is a group admin, if not, urls will not be checked
+    # Check if bot in group and if bot is a group admin, if not, links will not be checked
     if update.message.chat.type in (Chat.GROUP, Chat.SUPERGROUP) and \
             context.bot.get_chat_member(update.message.chat_id, context.bot.id).status != ChatMember.ADMINISTRATOR:
         update.message.reply_text('Set me as a group admin so that I can start checking links like this.')
@@ -33,13 +36,22 @@ def check_url(update, context):
     entities = update.message.parse_entities([MessageEntity.URL])
     urls = entities.values()
     active_urls = get_active_urls(urls)
-    is_safe, safe_list = scan_url(active_urls)
+    is_url_safe, safe_list = scan_url(active_urls)
+    is_file_safe = is_photo_safe = True
 
-    if not is_safe:
+    if is_url_safe:
+        is_file_safe, is_photo_safe, safe_list = check_file_photo(urls)
+
+    if not is_url_safe or not is_file_safe or not is_photo_safe:
+        if not is_photo_safe:
+            content = 'NSFW content'
+        else:
+            content = 'a virus or malware'
+
         if chat_type in (Chat.GROUP, Chat.SUPERGROUP):
             # store_msg(chat_id, msg_id, user_name, None, 'url', msg_text)
 
-            text = f'I deleted a message that contains links with a virus or malware (sent by {user_name}).'
+            text = f'I deleted a message that contains links with {content} (sent by {user_name}).'
             keyboard = [[InlineKeyboardButton(text='Undo', callback_data=f'undo,{msg_id}')]]
             reply_markup = InlineKeyboardMarkup(keyboard)
 
@@ -54,10 +66,10 @@ def check_url(update, context):
                     ordinals.append(p.ordinal(i + 1))
 
             if len(urls) == 1:
-                update.message.reply_text('I think the link contains a virus or malware, don\'t open it.')
+                update.message.reply_text(f'I think the link contains {content}, don\'t open it.')
             else:
-                update.message.reply_text(f'I think the {", ".join(ordinals)} links contain a virus or malware, '
-                                          f'don\'t open them.')
+                update.message.reply_text(f'I think the {", ".join(ordinals)} links contain a virus or malware or '
+                                          f'NSFW content, don\'t open them.')
     else:
         if chat_type == Chat.PRIVATE:
             if len(active_urls) == 0:
@@ -113,3 +125,32 @@ def scan_url(urls):
                 safe_list[urls_dict[match['threat']['url']]] = False
 
     return is_safe, safe_list
+
+
+def check_file_photo(urls):
+    is_file_safe = is_photo_safe = True
+    file_safe_list = []
+    photo_safe_list = []
+
+    for url in urls:
+        mime_type = mimetypes.guess_type(url)
+        if mime_type[0] is not None:
+            if not scan_file(file_url=url)[0]:
+                is_file_safe = False
+                file_safe_list.append(False)
+            else:
+                file_safe_list.append(True)
+
+            if is_file_safe and mime_type[0].startswith('image'):
+                if not scan_photo(file_url=url)[0]:
+                    is_photo_safe = False
+                    photo_safe_list.append(False)
+                else:
+                    photo_safe_list.append(True)
+
+    if not is_file_safe or is_photo_safe:
+        safe_list = [a if not a else b for a, b in zip(file_safe_list, photo_safe_list)]
+    else:
+        safe_list = [True] * len(urls)
+
+    return is_file_safe, is_photo_safe, safe_list

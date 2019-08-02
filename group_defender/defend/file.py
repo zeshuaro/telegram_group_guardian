@@ -95,7 +95,7 @@ def check_file(update, context, file_name, file_type):
 def scan_file(file_name=None, file_url=None):
     is_safe = True
     status = matches = None
-    url = 'http://beta.attachmentscanner.com/v0.1/scans'
+    url = 'https://beta.attachmentscanner.com/v0.1/scans'
     headers = {'authorization': f'bearer {SCANNER_TOKEN}'}
 
     if file_name is not None:

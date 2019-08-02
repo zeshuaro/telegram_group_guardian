@@ -62,9 +62,7 @@ def main():
 
     # Start the Bot
     if APP_URL:
-        updater.start_webhook(listen="0.0.0.0",
-                              port=PORT,
-                              url_path=TELE_TOKEN)
+        updater.start_webhook(listen="0.0.0.0", port=PORT, url_path=TELE_TOKEN)
         updater.bot.set_webhook(APP_URL + TELE_TOKEN)
         log.notice('Bot started webhook')
     else:

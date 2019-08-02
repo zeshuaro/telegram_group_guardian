@@ -49,6 +49,6 @@ def scan_photo(file_name=None, file_url=None):
 
     safe_ann = response.safe_search_annotation
     results = [safe_ann.adult, safe_ann.spoof, safe_ann.medical, safe_ann.violence, safe_ann.racy]
-    is_safe = any(x > SAFE_ANN_THRESHOLD for x in results)
+    is_safe = all(x < SAFE_ANN_THRESHOLD for x in results)
 
     return is_safe, results
