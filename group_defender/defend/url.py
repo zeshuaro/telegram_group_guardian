@@ -9,7 +9,7 @@ from requests.exceptions import ConnectionError
 from telegram import Chat, ChatAction, ChatMember, MessageEntity, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext.dispatcher import run_async
 
-from group_defender.constants import URL
+from group_defender.constants import URL, UNDO
 from group_defender.defend.file import scan_file
 from group_defender.defend.photo import scan_photo
 from group_defender.store import store_msg
@@ -52,7 +52,7 @@ def check_url(update, context):
             store_msg(chat_id, msg_id, username, None, URL, update.message.text)
 
             text = f'I deleted a message that contains links with {content} (sent by @{username}).'
-            keyboard = [[InlineKeyboardButton(text='Undo', callback_data=f'undo,{msg_id}')]]
+            keyboard = [[InlineKeyboardButton(text='Undo', callback_data=f'{UNDO},{msg_id}')]]
             reply_markup = InlineKeyboardMarkup(keyboard)
 
             update.message.delete()

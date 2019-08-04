@@ -34,9 +34,14 @@ SAFE_ANN_LIKELIHOODS = ['unknown', 'very unlikely', 'unlikely', 'possible', 'lik
 SAFE_ANN_TYPES = ['adult', 'spoof', 'medical', 'violence', 'racy']
 SAFE_ANN_THRESHOLD = 3
 
+# Google Datastore constants
 MSG = 'Message'
 USERNAME = 'username'
 FILE_ID = 'file_id'
 FILE_TYPE = 'file_type'
 MSG_TEXT = 'message_text'
 EXPIRY = 'expiry'
+
+# Inline keyboard constants
+UNDO = 'undo'
+DELETE = 'delete'

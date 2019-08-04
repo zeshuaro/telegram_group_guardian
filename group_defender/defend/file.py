@@ -8,7 +8,7 @@ from telegram import Chat, ChatMember, InlineKeyboardMarkup, InlineKeyboardButto
 from telegram.constants import MAX_FILESIZE_DOWNLOAD
 from telegram.ext.dispatcher import run_async
 
-from group_defender.constants import AUDIO, DOCUMENT, PHOTO, VIDEO, OK, FOUND, WARNING, FAILED
+from group_defender.constants import AUDIO, DOCUMENT, PHOTO, VIDEO, OK, FOUND, WARNING, FAILED, UNDO
 from group_defender.defend.photo import check_photo
 from group_defender.store import store_msg
 
@@ -68,7 +68,7 @@ def check_file(update, context, file_id, file_name, file_type):
             store_msg(chat_id, msg_id, username, file_id, file_type, update.message.text)
 
             text = f'I deleted a {file_type} that {threat_type} a virus or malware (sent by @{username}).'
-            keyboard = [[InlineKeyboardButton(text='Undo', callback_data=f'undo,{msg_id}')]]
+            keyboard = [[InlineKeyboardButton(text='Undo', callback_data=f'{UNDO},{msg_id}')]]
             reply_markup = InlineKeyboardMarkup(keyboard)
 
             update.message.delete()

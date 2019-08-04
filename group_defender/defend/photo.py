@@ -1,7 +1,7 @@
 from google.cloud import vision
 from telegram import Chat, InlineKeyboardButton, InlineKeyboardMarkup, ChatAction
 
-from group_defender.constants import SAFE_ANN_LIKELIHOODS, SAFE_ANN_TYPES, SAFE_ANN_THRESHOLD, PHOTO
+from group_defender.constants import SAFE_ANN_LIKELIHOODS, SAFE_ANN_TYPES, SAFE_ANN_THRESHOLD, PHOTO, UNDO
 from group_defender.store import store_msg
 
 
@@ -22,7 +22,7 @@ def check_photo(update, context, file_id, file_name):
 
             text = f'I deleted a photo that\'s {SAFE_ANN_LIKELIHOODS[safe_ann_value]} to contain ' \
                 f'{SAFE_ANN_TYPES[safe_ann_index]} content (sent by @{username}).'
-            keyboard = [[InlineKeyboardButton(text='Undo', callback_data=f'undo,{msg_id}')]]
+            keyboard = [[InlineKeyboardButton(text='Undo', callback_data=f'{UNDO},{msg_id}')]]
             reply_markup = InlineKeyboardMarkup(keyboard)
 
             update.message.delete()
