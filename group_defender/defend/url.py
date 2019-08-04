@@ -178,7 +178,7 @@ def check_file_photo(urls):
                 else:
                     photo_safe_list.append(True)
 
-    if not is_file_safe or is_photo_safe:
+    if not is_file_safe or not is_photo_safe:
         safe_list = [a if not a else b for a, b in zip(file_safe_list, photo_safe_list)]
     else:
         safe_list = [True] * len(urls)
