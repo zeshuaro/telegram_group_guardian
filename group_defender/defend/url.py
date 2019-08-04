@@ -12,14 +12,14 @@ from telegram.ext.dispatcher import run_async
 from group_defender.constants import URL
 from group_defender.defend.file import scan_file
 from group_defender.defend.photo import scan_photo
-from group_defender.utils import filter_msg, get_settings
+from group_defender.utils import filter_msg, get_setting
 
 
 load_dotenv()
 GOOGLE_TOKEN = os.environ.get('GOOGLE_TOKEN')
 
 if GOOGLE_TOKEN is None:
-    GOOGLE_TOKEN = get_settings('GOOGLE_TOKEN')
+    GOOGLE_TOKEN = get_setting('GOOGLE_TOKEN')
 
 
 @run_async

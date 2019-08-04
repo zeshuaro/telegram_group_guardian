@@ -8,10 +8,11 @@ from group_defender.constants import UNDO, SETTING, VALUE
 from group_defender.store import store_msg
 
 
-def get_settings(names):
-    if not isinstance(names, list):
-        names = [names]
+def get_setting(name):
+    return get_settings([name])[0]
 
+
+def get_settings(names):
     client = datastore.Client()
     values = []
 

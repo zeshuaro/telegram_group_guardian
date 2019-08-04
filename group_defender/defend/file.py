@@ -10,13 +10,13 @@ from telegram.ext.dispatcher import run_async
 
 from group_defender.constants import AUDIO, DOCUMENT, PHOTO, VIDEO, OK, FOUND, WARNING, FAILED
 from group_defender.defend.photo import check_photo
-from group_defender.utils import filter_msg, get_settings
+from group_defender.utils import filter_msg, get_setting
 
 load_dotenv()
 SCANNER_TOKEN = os.environ.get('SCANNER_TOKEN')
 
 if SCANNER_TOKEN is None:
-    SCANNER_TOKEN = get_settings('SCANNER_TOKEN')
+    SCANNER_TOKEN = get_setting('SCANNER_TOKEN')
 
 
 @run_async
