@@ -43,6 +43,7 @@ def process_msg(update, context):
 
 
 def restore_msg(context, query, chat_id, msg_id):
+    query.message.edit_text('Retrieving message')
     client = datastore.Client()
     msg_key = client.key(MSG, f'{chat_id},{msg_id}')
     msg = client.get(msg_key)
@@ -64,15 +65,15 @@ def restore_msg(context, query, chat_id, msg_id):
         reply_markup = InlineKeyboardMarkup(keyboard)
 
         if file_id is not None:
+            caption = f"@{username} sent this."
             if file_type == PHOTO:
-                context.bot.send_photo(chat_id, file_id, caption=f"@{username} sent this.", reply_markup=reply_markup)
+                context.bot.send_photo(chat_id, file_id, caption=caption, reply_markup=reply_markup)
             elif file_type == AUDIO:
-                context.bot.send_audio(chat_id, file_id, caption=f"@{username} sent this.", reply_markup=reply_markup)
+                context.bot.send_audio(chat_id, file_id, caption=caption, reply_markup=reply_markup)
             elif file_type == VIDEO:
-                context.bot.send_video(chat_id, file_id, caption=f"@{username} sent this.", reply_markup=reply_markup)
+                context.bot.send_video(chat_id, file_id, caption=caption, reply_markup=reply_markup)
             elif file_type == DOCUMENT:
-                context.bot.send_document(chat_id, file_id, caption=f"@{username} sent this.",
-                                          reply_markup=reply_markup)
+                context.bot.send_document(chat_id, file_id, caption=caption, reply_markup=reply_markup)
         else:
             context.bot.send_message(chat_id, f"@{username} sent this:\n{msg_text}", reply_markup=reply_markup)
     else:
@@ -80,4 +81,3 @@ def restore_msg(context, query, chat_id, msg_id):
             query.message.edit_text("Message has expired")
         except BadRequest:
             pass
-
