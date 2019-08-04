@@ -2,7 +2,9 @@
 
 [![Telegram Bot](https://img.shields.io/badge/Telegram-Bot-blue.svg)](https://t.me/grpdefbot)
 [![Telegram Channel](https://img.shields.io/badge/Telegram-Channel-blue.svg)](https://t.me/grpdefbotdev)
-[![MIT License](https://img.shields.io/github/license/zeshuaro/telegram-group-guardian.svg)](https://github.com/zeshuaro/telegram-group-guardian/blob/master/LICENSE)
+[![MIT License](https://img.shields.io/github/license/zeshuaro/telegram-group-defender.svg)](https://github.com/zeshuaro/telegram-group-guardian/blob/master/LICENSE)
+
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/068e749cb48343d08811e20a15af6696)](https://www.codacy.com/app/zeshuaro/telegram-group-defender?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=zeshuaro/telegram-group-defender&amp;utm_campaign=Badge_Grade)
 
 A PDF utility bot on Telegram that can:
 
