@@ -8,10 +8,13 @@ from telegram.ext.dispatcher import run_async
 
 from group_defender.constants import PAYMENT_THANKS, PAYMENT_COFFEE, PAYMENT_BEER, PAYMENT_MEAL, PAYMENT_CUSTOM, \
     PAYMENT_DICT, PAYMENT_PAYLOAD, PAYMENT_PARA, PAYMENT_CURRENCY, WAIT_PAYMENT
-from group_defender.utils import cancel
+from group_defender.utils import cancel, get_settings
 
 load_dotenv()
 STRIPE_TOKEN = os.environ.get('STRIPE_TOKEN', os.environ.get('STRIPE_TOKEN_BETA'))
+
+if STRIPE_TOKEN is None:
+    STRIPE_TOKEN = get_settings('STRIPE_TOKEN')
 
 
 def payment_cov_handler():

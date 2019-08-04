@@ -18,6 +18,11 @@ APP_URL = os.environ.get('APP_URL')
 PORT = int(os.environ.get('PORT', '8443'))
 TELE_TOKEN = os.environ.get('TELE_TOKEN_BETA', os.environ.get('TELE_TOKEN'))
 DEV_TELE_ID = int(os.environ.get('DEV_TELE_ID'))
+PROJECT_ID = os.environ.get('GOOGLE_CLOUD_PROJECT')
+
+if PROJECT_ID is not None:
+    TELE_TOKEN, DEV_TELE_ID = get_settings(['TELE_TOKEN', 'DEV_TELE_ID'])
+    APP_URL = f'https://{PROJECT_ID}.appspot.com/'
 
 
 def main():
@@ -55,7 +60,7 @@ def main():
     dispatcher.add_error_handler(error_callback)
 
     # Start the Bot
-    if APP_URL:
+    if APP_URL is not None:
         updater.start_webhook(listen='0.0.0.0', port=PORT, url_path=TELE_TOKEN)
         updater.bot.set_webhook(APP_URL + TELE_TOKEN)
         log.notice('Bot started webhook')
@@ -97,8 +102,8 @@ def help_msg(update, _):
     Returns:
         None
     """
-    keyboard = [[InlineKeyboardButton('Join Channel', f'https://t.me/grpdefbotdev'),
-                 InlineKeyboardButton('Support Group Defender', callback_data=PAYMENT)]]
+    keyboard = [[InlineKeyboardButton('Join Channel', f'https://t.me/grpdefbotdev')],
+                 [InlineKeyboardButton('Support Group Defender', callback_data=PAYMENT)]]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     update.message.reply_text(
@@ -163,7 +168,7 @@ def send(update, context):
     except Exception as e:
         log = Logger()
         log.error(e)
-        update.message.reply_text(DEV_TELE_ID, 'Failed to send message')
+        update.message.reply_text('Failed to send message')
 
 
 def error_callback(update, context):

@@ -1,10 +1,25 @@
+from google.cloud import datastore
 from telegram import ReplyKeyboardRemove, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.error import BadRequest
 from telegram.ext import ConversationHandler
 from telegram.ext.dispatcher import run_async
 
-from group_defender.constants import UNDO
+from group_defender.constants import UNDO, SETTING, VALUE
 from group_defender.store import store_msg
+
+
+def get_settings(names):
+    if not isinstance(names, list):
+        names = [names]
+
+    client = datastore.Client()
+    values = []
+
+    for name in names:
+        key = client.key(SETTING, name)
+        values.append(client.get(key)[VALUE])
+
+    return values
 
 
 @run_async

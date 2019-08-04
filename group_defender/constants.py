@@ -41,6 +41,8 @@ FILE_ID = 'file_id'
 FILE_TYPE = 'file_type'
 MSG_TEXT = 'message_text'
 EXPIRY = 'expiry'
+SETTING = 'Setting'
+VALUE = 'value'
 
 # Inline keyboard constants
 UNDO = 'undo'

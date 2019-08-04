@@ -1,0 +1,6 @@
+runtime: python37
+entrypoint: python bot.py
+
+handlers:
+- url: .*
+  script: auto

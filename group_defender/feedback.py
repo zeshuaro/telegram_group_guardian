@@ -8,11 +8,14 @@ from textblob.exceptions import TranslatorError
 from telegram.ext import CommandHandler, ConversationHandler, MessageHandler, Filters
 from telegram.ext.dispatcher import run_async
 
-from group_defender.utils import cancel
+from group_defender.utils import cancel, get_settings
 
 load_dotenv()
 SLACK_TOKEN = os.environ.get("SLACK_TOKEN")
 VALID_LANGS = ("en", "zh-hk", "zh-tw", "zh-cn")
+
+if SLACK_TOKEN is None:
+    SLACK_TOKEN = get_settings('SLACK_TOKEN')
 
 
 # Creates a feedback conversation handler
