@@ -6,13 +6,13 @@ import requests
 
 from dotenv import load_dotenv
 from requests.exceptions import ConnectionError
-from telegram import Chat, ChatAction, ChatMember, MessageEntity, InlineKeyboardMarkup, InlineKeyboardButton
+from telegram import Chat, ChatAction, ChatMember, MessageEntity
 from telegram.ext.dispatcher import run_async
 
-from group_defender.constants import URL, UNDO
+from group_defender.constants import URL
 from group_defender.defend.file import scan_file
 from group_defender.defend.photo import scan_photo
-from group_defender.store import store_msg
+from group_defender.utils import filter_msg
 
 
 load_dotenv()
@@ -36,6 +36,7 @@ def check_url(update, context):
     is_file_safe = is_photo_safe = True
 
     if is_url_safe:
+        update.message.chat.send_action(ChatAction.TYPING)
         is_file_safe, is_photo_safe, safe_list = check_file_photo(urls)
 
     chat_type = update.message.chat.type
@@ -46,17 +47,9 @@ def check_url(update, context):
             content = 'a virus or malware'
 
         if chat_type in (Chat.GROUP, Chat.SUPERGROUP):
-            chat_id = update.message.chat_id
-            msg_id = update.message.message_id
-            username = update.message.from_user.username
-            store_msg(chat_id, msg_id, username, None, URL, update.message.text)
-
-            text = f'I deleted a message that contains links with {content} (sent by @{username}).'
-            keyboard = [[InlineKeyboardButton(text='Undo', callback_data=f'{UNDO},{msg_id}')]]
-            reply_markup = InlineKeyboardMarkup(keyboard)
-
-            update.message.delete()
-            context.bot.send_message(chat_id, text, reply_markup=reply_markup)
+            text = f'I deleted a message that contains links with {content} ' \
+                f'(sent by @{update.message.from_user.username}).'
+            filter_msg(update, context, None, URL, text)
         else:
             ordinals = []
             p = inflect.engine()

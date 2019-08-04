@@ -4,13 +4,13 @@ import tempfile
 
 from dotenv import load_dotenv
 from logbook import Logger
-from telegram import Chat, ChatMember, InlineKeyboardMarkup, InlineKeyboardButton, ChatAction
+from telegram import Chat, ChatMember, ChatAction
 from telegram.constants import MAX_FILESIZE_DOWNLOAD
 from telegram.ext.dispatcher import run_async
 
-from group_defender.constants import AUDIO, DOCUMENT, PHOTO, VIDEO, OK, FOUND, WARNING, FAILED, UNDO
+from group_defender.constants import AUDIO, DOCUMENT, PHOTO, VIDEO, OK, FOUND, WARNING, FAILED
 from group_defender.defend.photo import check_photo
-from group_defender.store import store_msg
+from group_defender.utils import filter_msg
 
 load_dotenv()
 SCANNER_TOKEN = os.environ.get('SCANNER_TOKEN')
@@ -62,17 +62,9 @@ def check_file(update, context, file_id, file_name, file_type):
     if not is_safe:
         threat_type = 'contains' if status == FOUND else 'may contain'
         if chat_type in (Chat.GROUP, Chat.SUPERGROUP):
-            chat_id = update.message.chat_id
-            msg_id = update.message.message_id
-            username = update.message.from_user.username
-            store_msg(chat_id, msg_id, username, file_id, file_type, update.message.text)
-
-            text = f'I deleted a {file_type} that {threat_type} a virus or malware (sent by @{username}).'
-            keyboard = [[InlineKeyboardButton(text='Undo', callback_data=f'{UNDO},{msg_id}')]]
-            reply_markup = InlineKeyboardMarkup(keyboard)
-
-            update.message.delete()
-            context.bot.send_message(chat_id, text, reply_markup=reply_markup)
+            text = f'I deleted a {file_type} that {threat_type} a virus or malware ' \
+                f'(sent by @{update.message.from_user.username}).'
+            filter_msg(update, context, file_id, file_type, text)
         else:
             update.message.reply_text(f'I think it {threat_type} a virus or malware, don\'t download or open it.')
     else:

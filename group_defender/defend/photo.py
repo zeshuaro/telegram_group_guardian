@@ -1,8 +1,8 @@
 from google.cloud import vision
-from telegram import Chat, InlineKeyboardButton, InlineKeyboardMarkup, ChatAction
+from telegram import Chat, ChatAction
 
-from group_defender.constants import SAFE_ANN_LIKELIHOODS, SAFE_ANN_TYPES, SAFE_ANN_THRESHOLD, PHOTO, UNDO
-from group_defender.store import store_msg
+from group_defender.constants import SAFE_ANN_LIKELIHOODS, SAFE_ANN_TYPES, SAFE_ANN_THRESHOLD, PHOTO
+from group_defender.utils import filter_msg
 
 
 def check_photo(update, context, file_id, file_name):
@@ -15,18 +15,9 @@ def check_photo(update, context, file_id, file_name):
     if not is_safe:
         # Delete message if it is a group chat
         if chat_type in (Chat.GROUP, Chat.SUPERGROUP):
-            chat_id = update.message.chat_id
-            msg_id = update.message.message_id
-            username = update.message.from_user.username
-            store_msg(chat_id, msg_id, username, file_id, PHOTO, update.message.text)
-
             text = f'I deleted a photo that\'s {SAFE_ANN_LIKELIHOODS[safe_ann_value]} to contain ' \
-                f'{SAFE_ANN_TYPES[safe_ann_index]} content (sent by @{username}).'
-            keyboard = [[InlineKeyboardButton(text='Undo', callback_data=f'{UNDO},{msg_id}')]]
-            reply_markup = InlineKeyboardMarkup(keyboard)
-
-            update.message.delete()
-            context.bot.send_message(chat_id, text, reply_markup=reply_markup)
+                f'{SAFE_ANN_TYPES[safe_ann_index]} content (sent by @{update.message.from_user.username}).'
+            filter_msg(update, context, file_id, PHOTO, text)
         else:
             update.message.reply_text(f'And I think it\'s {SAFE_ANN_LIKELIHOODS[safe_ann_value]} to contain '
                                       f'{SAFE_ANN_TYPES[safe_ann_index]} content.')
