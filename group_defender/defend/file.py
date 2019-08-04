@@ -18,6 +18,15 @@ SCANNER_TOKEN = os.environ.get('SCANNER_TOKEN')
 
 @run_async
 def process_file(update, context):
+    """
+    Process files, including audio, document, photo and video
+    Args:
+        update: the update object
+        context: the context object
+
+    Returns:
+        None
+    """
     # Check if bot in group and if bot is a group admin, if not, files will not be checked
     if update.message.chat.type in (Chat.GROUP, Chat.SUPERGROUP) and \
             context.bot.get_chat_member(update.message.chat_id, context.bot.id).status != ChatMember.ADMINISTRATOR:
@@ -55,6 +64,18 @@ def process_file(update, context):
 
 
 def check_file(update, context, file_id, file_name, file_type):
+    """
+    Check if the file is safe or not
+    Args:
+        update: the update object
+        context: the context object
+        file_id: the int of the file ID
+        file_name: the string of the file name
+        file_type: the string of the file type
+
+    Returns:
+        None
+    """
     update.message.chat.send_action(ChatAction.TYPING)
     is_safe, status, matches = scan_file(file_name)
     chat_type = update.message.chat.type
@@ -78,6 +99,15 @@ def check_file(update, context, file_id, file_name, file_type):
 
 
 def scan_file(file_name=None, file_url=None):
+    """
+    Scan the file using the API
+    Args:
+        file_name: the string of the file name
+        file_url: the string of the file url
+
+    Returns:
+        A tuple of a bool indicating whether the file is safe or not, the status and matches from the API call
+    """
     is_safe = True
     status = matches = None
     url = 'https://beta.attachmentscanner.com/v0.1/scans'

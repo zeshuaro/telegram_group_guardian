@@ -14,16 +14,10 @@ from telegram.parsemode import ParseMode
 from group_defender import *
 
 load_dotenv()
-APP_URL = os.environ.get("APP_URL")
+APP_URL = os.environ.get('APP_URL')
 PORT = int(os.environ.get('PORT', '8443'))
 TELE_TOKEN = os.environ.get('TELE_TOKEN_BETA', os.environ.get('TELE_TOKEN'))
 DEV_TELE_ID = int(os.environ.get('DEV_TELE_ID'))
-GCP_KEY_FILE = os.environ.get('GCP_KEY_FILE')
-GCP_CRED = os.environ.get('GCP_CRED')
-
-if GCP_CRED is not None:
-    with open(GCP_KEY_FILE, 'w') as f:
-        f.write(GCP_CRED)
 
 
 def main():
@@ -38,6 +32,7 @@ def main():
     updater = Updater(
         TELE_TOKEN, use_context=True, request_kwargs={'connect_timeout': TIMEOUT, 'read_timeout': TIMEOUT})
 
+    # Setup job
     job_queue = updater.job_queue
     job_queue.run_repeating(delete_expired_msg, timedelta(days=MSG_LIFETIME), 0)
 
@@ -45,23 +40,23 @@ def main():
     dispatcher = updater.dispatcher
 
     # on different commands - answer in Telegram
-    dispatcher.add_handler(CommandHandler("start", start_msg))
-    dispatcher.add_handler(CommandHandler("help", help_msg))
-    dispatcher.add_handler(CommandHandler("donate", send_payment_options))
+    dispatcher.add_handler(CommandHandler('start', start_msg))
+    dispatcher.add_handler(CommandHandler('help', help_msg))
+    dispatcher.add_handler(CommandHandler('donate', send_payment_options))
     dispatcher.add_handler(MessageHandler(Filters.status_update.new_chat_members, greet_group))
     dispatcher.add_handler(MessageHandler(
         (Filters.audio | Filters.document | Filters.photo | Filters.video), process_file))
     dispatcher.add_handler(MessageHandler(Filters.entity(MessageEntity.URL), check_url))
     dispatcher.add_handler(CallbackQueryHandler(process_callback_query))
     dispatcher.add_handler(feedback_cov_handler())
-    dispatcher.add_handler(CommandHandler("send", send, Filters.user(DEV_TELE_ID), pass_args=True))
+    dispatcher.add_handler(CommandHandler('send', send, Filters.user(DEV_TELE_ID), pass_args=True))
 
     # log all errors
     dispatcher.add_error_handler(error_callback)
 
     # Start the Bot
     if APP_URL:
-        updater.start_webhook(listen="0.0.0.0", port=PORT, url_path=TELE_TOKEN)
+        updater.start_webhook(listen='0.0.0.0', port=PORT, url_path=TELE_TOKEN)
         updater.bot.set_webhook(APP_URL + TELE_TOKEN)
         log.notice('Bot started webhook')
     else:
@@ -115,6 +110,15 @@ def help_msg(update, _):
 
 @run_async
 def process_callback_query(update, context):
+    """
+    Process callback query
+    Args:
+        update: the update object
+        context: the context object
+
+    Returns:
+        None
+    """
     query = update.callback_query
     if query.data == PAYMENT:
         send_payment_options(update, context, query.from_user.id)
@@ -122,11 +126,10 @@ def process_callback_query(update, context):
         process_msg(update, context)
 
 
-# Greet when bot is added to group and asks for bot admin
 @run_async
 def greet_group(update, context):
     """
-    Send a greeting message when the bot is added to a group
+    Send a greeting message when the bot is added into a group
     Args:
         update: the update object
         context: the context object
@@ -164,6 +167,15 @@ def send(update, context):
 
 
 def error_callback(update, context):
+    """
+    Log errors
+    Args:
+        update: the update object
+        context: the context object
+
+    Returns:
+        None
+    """
     log = Logger()
     log.error(f'Update "{update}" caused error "{context.error}"')
 

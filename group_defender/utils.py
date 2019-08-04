@@ -24,6 +24,18 @@ def cancel(update, _):
 
 
 def filter_msg(update, context, file_id, file_type, text):
+    """
+    Delete and send new message
+    Args:
+        update: the update object
+        context: the context object
+        file_id: the int of the file ID
+        file_type: the string of the file type
+        text: the string of text to be sent
+
+    Returns:
+        None
+    """
     chat_id = update.message.chat_id
     msg_id = update.message.message_id
     store_msg(chat_id, msg_id, update.message.from_user.username, file_id, file_type, update.message.text)

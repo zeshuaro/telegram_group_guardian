@@ -7,7 +7,19 @@ from group_defender.constants import *
 
 
 def store_msg(chat_id, msg_id, username, file_id, file_type, msg_text):
-    expiry = datetime.utcnow() + timedelta(days=MSG_LIFETIME)
+    """
+    Store the message on datastore
+    Args:
+        chat_id: the int of the chat ID
+        msg_id: the int of the message ID
+        username: the string of the username
+        file_id: the int of the file ID
+        file_type: the string of the file type
+        msg_text: the string of the message text
+
+    Returns:
+        None
+    """
     client = datastore.Client()
     msg_key = client.key(MSG, f'{chat_id},{msg_id}')
     msg = datastore.Entity(msg_key)
@@ -16,12 +28,21 @@ def store_msg(chat_id, msg_id, username, file_id, file_type, msg_text):
         FILE_ID: file_id,
         FILE_TYPE: file_type,
         MSG_TEXT: msg_text,
-        EXPIRY: expiry
+        EXPIRY: datetime.utcnow() + timedelta(days=MSG_LIFETIME)
     })
     client.put(msg)
 
 
 def process_msg(update, context):
+    """
+    Process the message from inline keyboard
+    Args:
+        update: the update object
+        context: the context object
+
+    Returns:
+        None
+    """
     query = update.callback_query
     chat_id = query.message.chat_id
     user_id = query.from_user.id
@@ -43,6 +64,17 @@ def process_msg(update, context):
 
 
 def restore_msg(context, query, chat_id, msg_id):
+    """
+    Restore the deleted message
+    Args:
+        context: the context object
+        query: the query object
+        chat_id: the int of the chat ID
+        msg_id: the int of the message ID
+
+    Returns:
+        None
+    """
     query.message.edit_text('Retrieving message')
     client = datastore.Client()
     msg_key = client.key(MSG, f'{chat_id},{msg_id}')
@@ -84,6 +116,14 @@ def restore_msg(context, query, chat_id, msg_id):
 
 
 def delete_expired_msg(_):
+    """
+    Delete expired message
+    Args:
+        _: unused variable
+
+    Returns:
+        None
+    """
     client = datastore.Client()
     query = client.query(kind=MSG)
     query.add_filter(EXPIRY, '<', datetime.utcnow())

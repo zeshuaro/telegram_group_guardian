@@ -21,6 +21,15 @@ GOOGLE_TOKEN = os.environ.get('GOOGLE_TOKEN')
 
 @run_async
 def check_url(update, context):
+    """
+    Check if the url is safe or not
+    Args:
+        update: the update object
+        context: the context object
+
+    Returns:
+        None
+    """
     # Check if bot in group and if bot is a group admin, if not, links will not be checked
     if update.message.chat.type in (Chat.GROUP, Chat.SUPERGROUP) and \
             context.bot.get_chat_member(update.message.chat_id, context.bot.id).status != ChatMember.ADMINISTRATOR:
@@ -72,6 +81,14 @@ def check_url(update, context):
 
 
 def get_active_urls(urls):
+    """
+    Get a list of urls with an OK status
+    Args:
+        urls: the list of urls
+
+    Returns:
+        A list of urls
+    """
     active_urls = []
     for url in urls:
         if url.startswith('https://'):
@@ -91,6 +108,14 @@ def get_active_urls(urls):
 
 # Check if url is safe
 def scan_url(urls):
+    """
+    Scan the url using the API
+    Args:
+        urls:
+            the list of urls
+    Returns:
+        A tuple of a bool indicating if all the urls are safe and a list indicating the safeness of individual urls
+    """
     is_safe = True
     safe_list = [True] * len(urls)
 
@@ -121,6 +146,15 @@ def scan_url(urls):
 
 
 def check_file_photo(urls):
+    """
+    Check if the urls lead to a file or photo and if they are safe
+    Args:
+        urls: the list of urls
+
+    Returns:
+        A tuple of a bool indicating if the file is safe if exists, a bool indicating if the photo is safe if exists,
+        and a list indicating the safeness of individual urls
+    """
     is_file_safe = is_photo_safe = True
     file_safe_list = []
     photo_safe_list = []

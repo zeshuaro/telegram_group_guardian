@@ -6,6 +6,17 @@ from group_defender.utils import filter_msg
 
 
 def check_photo(update, context, file_id, file_name):
+    """
+    Check if the photo is safe or not
+    Args:
+        update: the update object
+        context: the context object
+        file_id: the int of the file ID
+        file_name: the string of the file name
+
+    Returns:
+        None
+    """
     update.message.chat.send_action(ChatAction.TYPING)
     is_safe, results = scan_photo(file_name)
     safe_ann_index = next((x[0] for x in enumerate(results) if x[1] > SAFE_ANN_THRESHOLD), 0)
@@ -27,6 +38,15 @@ def check_photo(update, context, file_id, file_name):
 
 
 def scan_photo(file_name=None, file_url=None):
+    """
+    Scan the photo using the API
+    Args:
+        file_name: the string of the file name
+        file_url: the string of the file url
+
+    Returns:
+        A tuple of a bool indicating if the photo is safe or not and the results from the API call
+    """
     if file_name is not None:
         img_src = {'content': open(file_name, 'rb').read()}
     else:
