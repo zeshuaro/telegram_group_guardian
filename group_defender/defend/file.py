@@ -8,7 +8,7 @@ from telegram import Chat, ChatMember, InlineKeyboardMarkup, InlineKeyboardButto
 from telegram.constants import MAX_FILESIZE_DOWNLOAD
 from telegram.ext.dispatcher import run_async
 
-from group_defender.constants import AUDIO, DOCUMENT, PHOTO, VIDEO, OK, FOUND, WARNING, PENDING, FAILED
+from group_defender.constants import AUDIO, DOCUMENT, PHOTO, VIDEO, OK, FOUND, WARNING, FAILED
 from group_defender.defend.photo import check_photo
 
 load_dotenv()
@@ -74,22 +74,23 @@ def check_file(update, context, file_name, file_type):
         else:
             update.message.reply_text(f'I think it {threat_type} a virus or malware, don\'t download or open it.')
     else:
-        if status == OK:
-            if chat_type == Chat.PRIVATE:
+        if chat_type == Chat.PRIVATE:
+            if status == OK:
                 update.message.reply_text('I think it doesn\'t contain any virus or malware.')
-        elif status == PENDING:
-            keyboard = [[InlineKeyboardButton(text='Try again', callback_data=f'again,{msg_id}')]]
-            reply_markup = InlineKeyboardMarkup(keyboard)
+            # elif status == PENDING:
+            #     keyboard = [[InlineKeyboardButton(text='Try again', callback_data=f'again,{msg_id}')]]
+            #     reply_markup = InlineKeyboardMarkup(keyboard)
+            #
+            #     update.message.reply_text(f'I am still scanning this {file_type}.', reply_markup=reply_markup)
+            else:
+                log = Logger()
+                log.error(matches)
+                update.message.reply_text('Something went wrong, try again.')
 
-            update.message.reply_text(f'I am still scanning this {file_type}.', reply_markup=reply_markup)
-        else:
-            log = Logger()
-            log.error(matches)
-
-            keyboard = [[InlineKeyboardButton(text='Try again', callback_data=f'again,{msg_id}')]]
-            reply_markup = InlineKeyboardMarkup(keyboard)
-
-            update.message.reply_text(f'Something went wrong.', reply_markup=reply_markup)
+                # keyboard = [[InlineKeyboardButton(text='Try again', callback_data=f'again,{msg_id}')]]
+                # reply_markup = InlineKeyboardMarkup(keyboard)
+                #
+                # update.message.reply_text(f'Something went wrong.', reply_markup=reply_markup)
 
 
 def scan_file(file_name=None, file_url=None):
