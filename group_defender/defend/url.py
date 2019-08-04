@@ -9,8 +9,10 @@ from requests.exceptions import ConnectionError
 from telegram import Chat, ChatAction, ChatMember, MessageEntity, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext.dispatcher import run_async
 
+from group_defender.constants import URL
 from group_defender.defend.file import scan_file
 from group_defender.defend.photo import scan_photo
+from group_defender.store import store_msg
 
 
 load_dotenv()
@@ -27,12 +29,6 @@ def check_url(update, context):
         return
 
     update.message.chat.send_action(ChatAction.TYPING)
-    chat_type = update.message.chat.type
-    chat_id = update.message.chat_id
-    msg_id = update.message.message_id
-    user_name = update.message.from_user.first_name
-    msg_text = update.message.text
-
     entities = update.message.parse_entities([MessageEntity.URL])
     urls = entities.values()
     active_urls = get_active_urls(urls)
@@ -42,6 +38,7 @@ def check_url(update, context):
     if is_url_safe:
         is_file_safe, is_photo_safe, safe_list = check_file_photo(urls)
 
+    chat_type = update.message.chat.type
     if not is_url_safe or not is_file_safe or not is_photo_safe:
         if not is_photo_safe:
             content = 'NSFW content'
@@ -49,9 +46,12 @@ def check_url(update, context):
             content = 'a virus or malware'
 
         if chat_type in (Chat.GROUP, Chat.SUPERGROUP):
-            # store_msg(chat_id, msg_id, user_name, None, 'url', msg_text)
+            chat_id = update.message.chat_id
+            msg_id = update.message.message_id
+            username = update.message.from_user.username
+            store_msg(chat_id, msg_id, username, None, URL, update.message.text)
 
-            text = f'I deleted a message that contains links with {content} (sent by {user_name}).'
+            text = f'I deleted a message that contains links with {content} (sent by @{username}).'
             keyboard = [[InlineKeyboardButton(text='Undo', callback_data=f'undo,{msg_id}')]]
             reply_markup = InlineKeyboardMarkup(keyboard)
 

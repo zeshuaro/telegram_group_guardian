@@ -20,6 +20,7 @@ AUDIO = 'audio'
 DOCUMENT = 'document'
 PHOTO = 'photo'
 VIDEO = 'video'
+URL = 'url'
 
 # Attachment Scanner constants
 OK = 'ok'
@@ -32,3 +33,10 @@ FAILED = 'failed'
 SAFE_ANN_LIKELIHOODS = ['unknown', 'very unlikely', 'unlikely', 'possible', 'likely', 'very likely']
 SAFE_ANN_TYPES = ['adult', 'spoof', 'medical', 'violence', 'racy']
 SAFE_ANN_THRESHOLD = 3
+
+MSG = 'Message'
+USERNAME = 'username'
+FILE_ID = 'file_id'
+FILE_TYPE = 'file_type'
+MSG_TEXT = 'message_text'
+EXPIRY = 'expiry'

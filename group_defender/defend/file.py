@@ -10,6 +10,7 @@ from telegram.ext.dispatcher import run_async
 
 from group_defender.constants import AUDIO, DOCUMENT, PHOTO, VIDEO, OK, FOUND, WARNING, FAILED
 from group_defender.defend.photo import check_photo
+from group_defender.store import store_msg
 
 load_dotenv()
 SCANNER_TOKEN = os.environ.get('SCANNER_TOKEN')
@@ -42,30 +43,31 @@ def process_file(update, context):
         return
 
     with tempfile.NamedTemporaryFile() as tf:
+        tele_file = file.get_file()
+        file_id = tele_file.file_id
         file_name = tf.name
-        file.get_file().download(file_name)
-        check_file(update, context, file_name, file_type)
+        tele_file.download(file_name)
+        check_file(update, context, file_id, file_name, file_type)
 
         file_mime_type = 'image' if file_type == PHOTO else file.mime_type
         if file_type == 'img' or file_mime_type.startswith('image'):
-            check_photo(update, context, file_name)
+            check_photo(update, context, file_id, file_name)
 
 
-def check_file(update, context, file_name, file_type):
+def check_file(update, context, file_id, file_name, file_type):
     update.message.chat.send_action(ChatAction.TYPING)
     is_safe, status, matches = scan_file(file_name)
     chat_type = update.message.chat.type
-    chat_id = update.message.chat_id
-    msg_id = update.message.message_id
-    user_name = update.message.from_user.first_name
-    msg_text = update.message.text
 
     if not is_safe:
         threat_type = 'contains' if status == FOUND else 'may contain'
         if chat_type in (Chat.GROUP, Chat.SUPERGROUP):
-            # store_msg(chat_id, msg_id, user_name, file_id, file_type, msg_text)
+            chat_id = update.message.chat_id
+            msg_id = update.message.message_id
+            username = update.message.from_user.username
+            store_msg(chat_id, msg_id, username, file_id, file_type, update.message.text)
 
-            text = f'I deleted a {file_type} that {threat_type} a virus or malware (sent by {user_name}).'
+            text = f'I deleted a {file_type} that {threat_type} a virus or malware (sent by @{username}).'
             keyboard = [[InlineKeyboardButton(text='Undo', callback_data=f'undo,{msg_id}')]]
             reply_markup = InlineKeyboardMarkup(keyboard)
 
@@ -77,20 +79,10 @@ def check_file(update, context, file_name, file_type):
         if chat_type == Chat.PRIVATE:
             if status == OK:
                 update.message.reply_text('I think it doesn\'t contain any virus or malware.')
-            # elif status == PENDING:
-            #     keyboard = [[InlineKeyboardButton(text='Try again', callback_data=f'again,{msg_id}')]]
-            #     reply_markup = InlineKeyboardMarkup(keyboard)
-            #
-            #     update.message.reply_text(f'I am still scanning this {file_type}.', reply_markup=reply_markup)
             else:
                 log = Logger()
                 log.error(matches)
                 update.message.reply_text('Something went wrong, try again.')
-
-                # keyboard = [[InlineKeyboardButton(text='Try again', callback_data=f'again,{msg_id}')]]
-                # reply_markup = InlineKeyboardMarkup(keyboard)
-                #
-                # update.message.reply_text(f'Something went wrong.', reply_markup=reply_markup)
 
 
 def scan_file(file_name=None, file_url=None):

@@ -93,11 +93,6 @@ def start_msg(update, _):
     Returns:
         None
     """
-    text = "Welcome to Group Guardian!\n\n"
-    text += "I can protect you and your group from files or links that may contain threats, and photos or urls of " \
-            "photos that may contain adult, spoof, medical, violence or racy content.\n\n"
-    text += "Type /help to see how to use me."
-
     update.message.reply_text(
         'Welcome to Group Defender!\n\n*Features*\n'
         '- Filter files and links that may contain virus or malwares\n'
@@ -122,8 +117,8 @@ def help_msg(update, _):
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     update.message.reply_text(
-        'If you\'re just chatting with me, simply send me a photo, a file or a url and '
-        'I\'ll tell you if it is safe or NSFW.\n\n'
+        'If you\'re just chatting with me, simply send me a photo, a file or a link and '
+        'I\'ll tell you if it safe.\n\n'
         'If you want me to defend your group, add me into your group and set me as an admin. '
         'I\'ll filter all the unsafe content.', reply_markup=reply_markup)
 
