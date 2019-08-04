@@ -1,60 +1,42 @@
-# Telegram Group Guardian
+# Telegram Group Defender
 
-Telegram Bot that provides guards your group
+[![Telegram Bot](https://img.shields.io/badge/Telegram-Bot-blue.svg)](https://t.me/grpdefbot)
+[![Telegram Channel](https://img.shields.io/badge/Telegram-Channel-blue.svg)](https://t.me/grpdefbotdev)
+[![MIT License](https://img.shields.io/github/license/zeshuaro/telegram-group-guardian.svg)](https://github.com/zeshuaro/telegram-group-guardian/blob/master/LICENSE)
 
-Connect to [Bot](https://t.me/groupguardianbot)
+A PDF utility bot on Telegram that can:
 
-Stay tuned for updates and new releases on the [Telegram Channel](https://t.me/groupguardianbotdev)
+* Filter files and links that may contain virus or malwares\n
+* Filter photos and links of photos that are NSFW
 
 ## Getting Started
 
-These instructions will get you a copy of the project up and running on your local machine for development and 
-testing purposes
-
 ### Prerequisites
 
-Run the following command to install the required libraries:
+Run the following command to install the required packages:
 
-```
+```bash
 pip install -r requirements.txt
 ```
-
-Below is a list of the main libraries that are included:
-
-* [Python Telegram Bot](https://github.com/python-telegram-bot/python-telegram-bot)
-* [Google Cloud Vision](https://github.com/GoogleCloudPlatform/google-cloud-python/tree/master/vision)
-
-You will also need postgres to be set up and running.
 
 The bot uses [Google Cloud Vision](https://cloud.google.com/vision/) to check for inappropriate content in images, 
 [Google Safe Browsing](https://developers.google.com/safe-browsing/) to check for threats in links, and
  [Attachment Scanner](http://www.attachmentscanner.com/) to scan for virus and malware.
 
-You should also download a service account JSON keyfile from Google Cloud Console and point to it using an 
-environment variable.
+### Setup Your Environment Variables
 
-```angular2html
-export GOOGLE_APPLICATION_CREDENTIALS="/path/to/keyfile.json"
+Make a .env file and put your telegram token in there. Below is an example:
+
+```bash
+TELE_TOKEN="telegram_token"
+SCANNER_TOKEN="scanner_token"
+GOOGLE_TOKEN="google_token"
 ```
 
-Make a `.env` file and put your telegram token in there. 
+### Running The Bot
 
-You will also need to include the tokens of Google Safe Browsing and Attachment Scanner, and your database settings.
+You can then start the bot with the following command:
 
-
-
-If you want to use the webhook method to run the bot, also include `APP_URL` and `PORT` in the `.env` file. If you 
-want to use polling instead, do not include `APP_URL` in your `.env` file.
-
-Below is an example:
-
-```
-TELEGRAM_TOKEN=<telegram_token>
-DB_NAME=<database_name
-DB_USER=<database_username>
-DB_PW=<database_password>
-DB_HOST=<database_host>
-DB_PORT=<database_port>
-GOOGLE_TOKEN=<safe_browsing_token>
-SCANNER_TOKEN=<scanner_token>
+```bash
+python bot.py
 ```
