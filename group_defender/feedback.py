@@ -79,7 +79,7 @@ def receive_feedback(update, _):
 
     if SLACK_TOKEN is not None:
         client = WebClient(token=SLACK_TOKEN)
-        response = client.chat_postMessage(channel="#pdf-bot-feedback", text=text)
+        response = client.chat_postMessage(channel="#grp-def-feedback", text=text)
 
         if response['ok'] and response['message']['text'] == text:
             success = True

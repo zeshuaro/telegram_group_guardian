@@ -4,9 +4,10 @@
 [![Telegram Channel](https://img.shields.io/badge/Telegram-Channel-blue.svg)](https://t.me/grpdefbotdev)
 [![MIT License](https://img.shields.io/github/license/zeshuaro/telegram-group-defender.svg)](https://github.com/zeshuaro/telegram-group-guardian/blob/master/LICENSE)
 
+[![Build Status](https://travis-ci.com/zeshuaro/telegram-group-defender.svg?branch=master)](https://travis-ci.com/zeshuaro/telegram-group-defender)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/068e749cb48343d08811e20a15af6696)](https://www.codacy.com/app/zeshuaro/telegram-group-defender?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=zeshuaro/telegram-group-defender&amp;utm_campaign=Badge_Grade)
 
-A PDF utility bot on Telegram that can:
+A utility bot for group chats on Telegram that can:
 
 * Filter files and links that may contain virus or malwares\n
 * Filter photos and links of photos that are NSFW

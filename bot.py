@@ -1,5 +1,6 @@
 import logbook
 import os
+import re
 import sys
 
 from dotenv import load_dotenv
@@ -7,7 +8,7 @@ from datetime import timedelta
 from logbook import Logger, StreamHandler
 from logbook.compat import redirect_logging
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, MessageEntity
-from telegram.ext import Updater, CommandHandler, MessageHandler, CallbackQueryHandler, Filters
+from telegram.ext import Updater, CommandHandler, MessageHandler, CallbackQueryHandler, Filters, PreCheckoutQueryHandler
 from telegram.ext.dispatcher import run_async
 from telegram.parsemode import ParseMode
 
@@ -44,19 +45,33 @@ def main():
     # Get the dispatcher to register handlers
     dispatcher = updater.dispatcher
 
-    # on different commands - answer in Telegram
+    # Commands handlers
     dispatcher.add_handler(CommandHandler('start', start_msg))
     dispatcher.add_handler(CommandHandler('help', help_msg))
     dispatcher.add_handler(CommandHandler('donate', send_payment_options))
+    dispatcher.add_handler(CommandHandler('send', send, Filters.user(DEV_TELE_ID)))
+
+    # Callback query handler
+    dispatcher.add_handler(CallbackQueryHandler(process_callback_query))
+
+    # Group Defender handlers
     dispatcher.add_handler(MessageHandler(Filters.status_update.new_chat_members, greet_group))
     dispatcher.add_handler(MessageHandler(
         (Filters.audio | Filters.document | Filters.photo | Filters.video), process_file))
     dispatcher.add_handler(MessageHandler(Filters.entity(MessageEntity.URL), check_url))
-    dispatcher.add_handler(CallbackQueryHandler(process_callback_query))
-    dispatcher.add_handler(feedback_cov_handler())
-    dispatcher.add_handler(CommandHandler('send', send, Filters.user(DEV_TELE_ID), pass_args=True))
 
-    # log all errors
+    # Payment handlers
+    dispatcher.add_handler(MessageHandler(Filters.regex(
+        rf'^({re.escape(PAYMENT_THANKS)}|{re.escape(PAYMENT_COFFEE)}|{re.escape(PAYMENT_BEER)}|'
+        rf'{re.escape(PAYMENT_MEAL)})$'), send_payment_invoice))
+    dispatcher.add_handler(payment_cov_handler())
+    dispatcher.add_handler(PreCheckoutQueryHandler(precheckout_check))
+    dispatcher.add_handler(MessageHandler(Filters.successful_payment, successful_payment))
+
+    # Feedback handler
+    dispatcher.add_handler(feedback_cov_handler())
+
+    # Log all errors
     dispatcher.add_error_handler(error_callback)
 
     # Start the Bot
@@ -103,7 +118,7 @@ def help_msg(update, _):
         None
     """
     keyboard = [[InlineKeyboardButton('Join Channel', f'https://t.me/grpdefbotdev')],
-                 [InlineKeyboardButton('Support Group Defender', callback_data=PAYMENT)]]
+                [InlineKeyboardButton('Support Group Defender', callback_data=PAYMENT)]]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     update.message.reply_text(

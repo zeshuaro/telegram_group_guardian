@@ -12,6 +12,7 @@ from group_defender.utils import cancel, get_settings
 
 load_dotenv()
 STRIPE_TOKEN = os.environ.get('STRIPE_TOKEN', os.environ.get('STRIPE_TOKEN_BETA'))
+BOT_NAME = 'Group Defender'
 
 if STRIPE_TOKEN is None:
     STRIPE_TOKEN = get_settings('STRIPE_TOKEN')
@@ -37,7 +38,7 @@ def payment_cov_handler():
 
 @run_async
 def custom_amount(update, _):
-    update.message.reply_text('Send me the amount that you\'ll like to support PDF Bot or /cancel this.',
+    update.message.reply_text(f'Send me the amount that you\'ll like to support {BOT_NAME} or /cancel this.',
                               reply_markup=ReplyKeyboardRemove())
 
     return WAIT_PAYMENT
@@ -61,7 +62,7 @@ def receive_custom_amount(update, context):
 def send_payment_options(update, context, user_id=None):
     keyboard = [[PAYMENT_THANKS, PAYMENT_COFFEE, PAYMENT_BEER], [PAYMENT_MEAL, PAYMENT_CUSTOM]]
     reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True)
-    text = 'Select how you want to support PDF Bot'
+    text = f'Select how you want to support {BOT_NAME}'
 
     if user_id is None:
         update.message.reply_text(text, reply_markup=reply_markup)
@@ -72,8 +73,8 @@ def send_payment_options(update, context, user_id=None):
 @run_async
 def send_payment_invoice(update, context, amount=None):
     chat_id = update.message.chat_id
-    title = "Support PDF Bot"
-    description = "Say thanks to PDF Bot and help keep it running"
+    title = f'Support {BOT_NAME}'
+    description = f'Say thanks to {BOT_NAME} and help keep it running'
     payload = PAYMENT_PAYLOAD
     provider_token = STRIPE_TOKEN
     start_parameter = PAYMENT_PARA
