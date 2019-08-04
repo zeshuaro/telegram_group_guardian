@@ -81,3 +81,13 @@ def restore_msg(context, query, chat_id, msg_id):
             query.message.edit_text("Message has expired")
         except BadRequest:
             pass
+
+
+def delete_expired_msg(_):
+    client = datastore.Client()
+    query = client.query(kind=MSG)
+    query.add_filter(EXPIRY, '<', datetime.utcnow())
+    query.keys_only()
+    keys = [x.key for x in query.fetch()]
+    client.delete_multi(keys)
+

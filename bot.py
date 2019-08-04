@@ -3,11 +3,10 @@ import os
 import sys
 
 from dotenv import load_dotenv
-from datetime import datetime, timedelta
+from datetime import timedelta
 from logbook import Logger, StreamHandler
 from logbook.compat import redirect_logging
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ChatMember, Chat, MessageEntity
-from telegram.error import BadRequest
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, MessageEntity
 from telegram.ext import Updater, CommandHandler, MessageHandler, CallbackQueryHandler, Filters
 from telegram.ext.dispatcher import run_async
 from telegram.parsemode import ParseMode
@@ -39,8 +38,8 @@ def main():
     updater = Updater(
         TELE_TOKEN, use_context=True, request_kwargs={'connect_timeout': TIMEOUT, 'read_timeout': TIMEOUT})
 
-    # job_queue = updater.job_queue
-    # job_queue.run_repeating(delete_expired_msg, timedelta(days=MSG_LIFETIME), 0)
+    job_queue = updater.job_queue
+    job_queue.run_repeating(delete_expired_msg, timedelta(days=MSG_LIFETIME), 0)
 
     # Get the dispatcher to register handlers
     dispatcher = updater.dispatcher
@@ -75,14 +74,6 @@ def main():
     updater.idle()
 
 
-# Delete expired message
-def delete_expired_msg(bot, job):
-    curr_datetime = datetime.now()
-    with conn_db() as conn:
-        with conn.cursor() as cur:
-            cur.execute("delete from msg_info where expire < %s",  (curr_datetime,))
-
-
 def start_msg(update, _):
     """
     Send start message
@@ -111,7 +102,6 @@ def help_msg(update, _):
     Returns:
         None
     """
-
     keyboard = [[InlineKeyboardButton('Join Channel', f'https://t.me/grpdefbotdev'),
                  InlineKeyboardButton('Support Group Defender', callback_data=PAYMENT)]]
     reply_markup = InlineKeyboardMarkup(keyboard)
