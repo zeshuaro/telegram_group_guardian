@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from datetime import timedelta
 from logbook import Logger, StreamHandler
 from logbook.compat import redirect_logging
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, MessageEntity
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, MessageEntity, Chat
 from telegram.ext import Updater, CommandHandler, MessageHandler, CallbackQueryHandler, Filters, PreCheckoutQueryHandler
 from telegram.ext.dispatcher import run_async
 from telegram.parsemode import ParseMode
@@ -89,17 +89,21 @@ def main():
     updater.idle()
 
 
-def start_msg(update, _):
+def start_msg(update, context):
     """
     Send start message
     Args:
         update: the update object
-        _: unused variable
+        context: the context object
 
     Returns:
         None
     """
-    update.message.reply_text(
+    if update.message.chat.type in (Chat.GROUP, Chat.SUPERGROUP):
+        update.message.reply_text('I\'ve PM you the start message.')
+
+    context.bot.send_message(
+        update.message.from_user.id,
         'Welcome to Group Defender!\n\n*Features*\n'
         '- Filter files and links that may contain virus or malwares\n'
         '- Filter photos and links of photos that are NSFW\n\n'
@@ -107,21 +111,25 @@ def start_msg(update, _):
 
 
 @run_async
-def help_msg(update, _):
+def help_msg(update, context):
     """
     Send help message
     Args:
         update: the update object
-        _: unused variable
+        context: the context object
 
     Returns:
         None
     """
+    if update.message.chat.type in (Chat.GROUP, Chat.SUPERGROUP):
+        update.message.reply_text('I\'ve PM you the help message.')
+
     keyboard = [[InlineKeyboardButton('Join Channel', f'https://t.me/grpdefbotdev')],
                 [InlineKeyboardButton('Support Group Defender', callback_data=PAYMENT)]]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    update.message.reply_text(
+    context.bot.send_message(
+        update.message.from_user.id,
         'If you\'re just chatting with me, simply send me a photo, a file or a link and '
         'I\'ll tell you if it safe.\n\n'
         'If you want me to defend your group, add me into your group and set me as an admin. '

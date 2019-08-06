@@ -2,7 +2,7 @@ import os
 import re
 
 from dotenv import load_dotenv
-from telegram import LabeledPrice, ReplyKeyboardMarkup, ReplyKeyboardRemove
+from telegram import LabeledPrice, ReplyKeyboardMarkup, ReplyKeyboardRemove, Chat
 from telegram.ext import ConversationHandler, MessageHandler, CommandHandler, Filters
 from telegram.ext.dispatcher import run_async
 
@@ -60,25 +60,27 @@ def receive_custom_amount(update, context):
 
 @run_async
 def send_payment_options(update, context, user_id=None):
+    if user_id is None:
+        chat_id = update.message.from_user.id
+        if update.message.chat.type in (Chat.GROUP, Chat.SUPERGROUP):
+            update.message.reply_text('I\'ve PM you the support options.', reply_markup=ReplyKeyboardRemove())
+    else:
+        chat_id = user_id
+
+    text = f'Select how you want to support {BOT_NAME}'
     keyboard = [[PAYMENT_THANKS, PAYMENT_COFFEE, PAYMENT_BEER], [PAYMENT_MEAL, PAYMENT_CUSTOM]]
     reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True)
-    text = f'Select how you want to support {BOT_NAME}'
-
-    if user_id is None:
-        update.message.reply_text(text, reply_markup=reply_markup)
-    else:
-        context.bot.send_message(user_id, text, reply_markup=reply_markup)
+    context.bot.send_message(chat_id, text, reply_markup=reply_markup)
 
 
 @run_async
 def send_payment_invoice(update, context, amount=None):
-    chat_id = update.message.chat_id
+    if update.message.chat.type in (Chat.GROUP, Chat.SUPERGROUP):
+        update.message.reply_text('I\'ve PM you the invoice.', reply_markup=ReplyKeyboardRemove())
+
+    chat_id = update.message.from_user.id
     title = f'Support {BOT_NAME}'
     description = f'Say thanks to {BOT_NAME} and help keep it running'
-    payload = PAYMENT_PAYLOAD
-    provider_token = STRIPE_TOKEN
-    start_parameter = PAYMENT_PARA
-    currency = PAYMENT_CURRENCY
 
     if amount is None:
         label = update.message.text
@@ -88,8 +90,8 @@ def send_payment_invoice(update, context, amount=None):
         price = amount
 
     prices = [LabeledPrice(re.sub(r'\s\(.*', '', label), price * 100)]
-
-    context.bot.send_invoice(chat_id, title, description, payload, provider_token, start_parameter, currency, prices)
+    context.bot.send_invoice(
+        chat_id, title, description, PAYMENT_PAYLOAD, STRIPE_TOKEN, PAYMENT_PARA, PAYMENT_CURRENCY, prices)
 
 
 @run_async
