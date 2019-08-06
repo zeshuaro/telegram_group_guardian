@@ -19,7 +19,7 @@ def check_photo(update, context, file_id, file_name):
     """
     update.message.chat.send_action(ChatAction.TYPING)
     is_safe, results = scan_photo(file_name)
-    safe_ann_index = next((x[0] for x in enumerate(results) if x[1] > SAFE_ANN_THRESHOLD), 0)
+    safe_ann_index = next((x[0] for x in enumerate(results) if x[1] >= SAFE_ANN_THRESHOLD), 0)
     safe_ann_value = results[safe_ann_index]
     chat_type = update.message.chat.type
 
@@ -30,11 +30,13 @@ def check_photo(update, context, file_id, file_name):
                 f'{SAFE_ANN_TYPES[safe_ann_index]} content (sent by @{update.message.from_user.username}).'
             filter_msg(update, context, file_id, PHOTO, text)
         else:
-            update.message.reply_text(f'And I think it\'s {SAFE_ANN_LIKELIHOODS[safe_ann_value]} to contain '
+            update.message.reply_text(f'I think it\'s {SAFE_ANN_LIKELIHOODS[safe_ann_value]} to contain '
                                       f'{SAFE_ANN_TYPES[safe_ann_index]} content.')
     else:
         if chat_type == Chat.PRIVATE:
-            update.message.reply_text('And I think it doesn\'t contain any NSFW content.')
+            update.message.reply_text('I think it doesn\'t contain any NSFW content.')
+
+    return is_safe
 
 
 def scan_photo(file_name=None, file_url=None):

@@ -59,11 +59,13 @@ def process_file(update, context):
         file_id = tele_file.file_id
         file_name = tf.name
         tele_file.download(file_name)
-        check_file(update, context, file_id, file_name, file_type)
+        is_safe = True
 
-        file_mime_type = 'image' if file_type == PHOTO else file.mime_type
-        if file_type == 'img' or file_mime_type.startswith('image'):
-            check_photo(update, context, file_id, file_name)
+        if file_type == PHOTO or file.mime_type.startswith('image'):
+            is_safe = check_photo(update, context, file_id, file_name)
+
+        if is_safe:
+            check_file(update, context, file_id, file_name, file_type)
 
 
 def check_file(update, context, file_id, file_name, file_type):

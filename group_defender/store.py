@@ -130,4 +130,3 @@ def delete_expired_msg(_):
     query.keys_only()
     keys = [x.key for x in query.fetch()]
     client.delete_multi(keys)
-
