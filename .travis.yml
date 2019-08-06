@@ -1,5 +1,9 @@
 language: generic
 
+branches:
+  only:
+  - master
+
 before_install:
 - openssl aes-256-cbc -K $encrypted_6042fc3610b0_key -iv $encrypted_6042fc3610b0_iv
   -in telegram-group-defender.json.enc -out telegram-group-defender.json -d
