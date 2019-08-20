@@ -48,7 +48,8 @@ def check_photo(update, context, file_id, file_name):
             if chat_type == Chat.PRIVATE:
                 update.message.reply_text('I think it doesn\'t contain any NSFW content.', quote=True)
     else:
-        update.message.reply_text('Photo scanning is currently unavailable.', quote=True)
+        if chat_type == Chat.PRIVATE:
+            update.message.reply_text('Photo scanning is currently unavailable.', quote=True)
 
     return is_safe
 

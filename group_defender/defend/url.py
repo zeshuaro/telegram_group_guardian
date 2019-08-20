@@ -71,16 +71,16 @@ def check_url(update, context):
                     ordinals.append(p.ordinal(i + 1))
 
             if len(urls) == 1:
-                update.message.reply_text(f'I think the link contains {content}, don\'t open it.')
+                update.message.reply_text(f'I think the link contains {content}, don\'t open it.', quote=True)
             else:
                 update.message.reply_text(f'I think the {", ".join(ordinals)} links contain a virus or malware or '
-                                          f'NSFW content, don\'t open them.')
+                                          f'NSFW content, don\'t open them.', quote=True)
     else:
         if chat_type == Chat.PRIVATE:
             if len(active_urls) == 0:
-                update.message.reply_text('I couldn\'t check the link(s) as they are unavailable.')
+                update.message.reply_text('I couldn\'t check the link(s) as they are unavailable.', quote=True)
             else:
-                update.message.reply_text('I think the link(s) are safe.')
+                update.message.reply_text('I think the link(s) are safe.', quote=True)
 
 
 def get_active_urls(urls):

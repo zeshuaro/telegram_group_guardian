@@ -92,15 +92,16 @@ def check_file(update, context, file_id, file_name, file_type):
                 f'(sent by @{update.message.from_user.username}).'
             filter_msg(update, context, file_id, file_type, text)
         else:
-            update.message.reply_text(f'I think it {threat_type} a virus or malware, don\'t download or open it.')
+            update.message.reply_text(
+                f'I think it {threat_type} a virus or malware, don\'t download or open it.', quote=True)
     else:
         if chat_type == Chat.PRIVATE:
             if status == OK:
-                update.message.reply_text('I think it doesn\'t contain any virus or malware.')
+                update.message.reply_text('I think it doesn\'t contain any virus or malware.', quote=True)
             else:
                 log = Logger()
                 log.error(matches)
-                update.message.reply_text('Something went wrong, try again.')
+                update.message.reply_text('Something went wrong, try again.', quote=True)
 
 
 def scan_file(file_name=None, file_url=None):
