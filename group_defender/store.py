@@ -49,6 +49,8 @@ def process_msg(update, context):
 
     if query.message.chat.type in (Chat.GROUP, Chat.SUPERGROUP) and \
             context.bot.get_chat_member(chat_id, user_id).status not in (ChatMember.ADMINISTRATOR, ChatMember.CREATOR):
+        context.bot.send_message(user_id, 'You can\'t perform this action as you\'re not a group admin.')
+
         return
 
     task, msg_id = query.data.split(",")

@@ -133,7 +133,8 @@ def help_msg(update, context):
         'If you\'re just chatting with me, simply send me a photo, a file or a link and '
         'I\'ll tell you if it safe.\n\n'
         'If you want me to defend your group, add me into your group and set me as an admin. '
-        'I\'ll filter all the unsafe content.', reply_markup=reply_markup)
+        'I\'ll filter all the unsafe content. When I removed a message, '
+        'only group admins can undo or delete the action.', reply_markup=reply_markup)
 
 
 @run_async
