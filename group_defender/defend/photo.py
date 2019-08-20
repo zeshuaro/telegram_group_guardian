@@ -4,6 +4,7 @@ from azure.cognitiveservices.vision.contentmoderator import ContentModeratorClie
 from datetime import date
 from dotenv import load_dotenv
 from google.cloud import vision, datastore
+from logbook import Logger
 from msrest.authentication import CognitiveServicesCredentials
 from telegram import Chat, ChatAction
 
@@ -73,6 +74,9 @@ def scan_photo(file_name=None, file_url=None):
     elif AZURE not in entities or entities[AZURE] <= AZURE_LIMIT:
         is_safe, likelihood = azure_scan(file_name, file_url)
         update_api_count(client, AZURE, curr_year, curr_month)
+    else:
+        log = Logger()
+        log.warn('Vision scan tokens exhausted')
 
     return is_safe, likelihood
 
