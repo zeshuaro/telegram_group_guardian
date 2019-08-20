@@ -31,7 +31,7 @@ FAILED = 'failed'
 # Google Vision constants
 GCP_LIKELIHOODS = ['unknown', 'very unlikely', 'unlikely', 'possible', 'likely', 'very likely']
 GCP_THRESHOLD = 3
-GCP_LIMIT = 1
+GCP_LIMIT = 950
 
 # Azure Content Moderator constants
 AZURE_LIMIT = 4950
