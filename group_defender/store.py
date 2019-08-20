@@ -55,7 +55,9 @@ def process_msg(update, context):
     msg_id = int(msg_id)
 
     if task == UNDO:
-        restore_msg(context, query, chat_id, msg_id)
+        if (chat_id, msg_id) not in context.chat_data:
+            context.chat_data[chat_id, msg_id] = None
+            restore_msg(context, query, chat_id, msg_id)
     elif task == DELETE:
         try:
             query.message.delete()
@@ -113,6 +115,11 @@ def restore_msg(context, query, chat_id, msg_id):
             query.message.edit_text("Message has expired")
         except BadRequest:
             pass
+
+    try:
+        del context.chat_data[chat_id, msg_id]
+    except KeyError:
+        pass
 
 
 def delete_expired_msg(_):
