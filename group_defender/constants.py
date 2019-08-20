@@ -1,4 +1,3 @@
-VISION_IMAGE_SIZE_LIMIT = 4000000
 MSG_LIFETIME = 1  # 1 day
 TIMEOUT = 20
 
@@ -32,7 +31,11 @@ FAILED = 'failed'
 # Google Vision constants
 GCP_LIKELIHOODS = ['unknown', 'very unlikely', 'unlikely', 'possible', 'likely', 'very likely']
 GCP_THRESHOLD = 3
-GCP_LIMIT = 950
+GCP_LIMIT = 1
+
+# Azure Content Moderator constants
+AZURE_LIMIT = 4950
+AZURE_THRESHOLD = 0.5
 
 # Google Datastore constants
 MSG = 'Message'
@@ -49,6 +52,7 @@ YEAR = 'year'
 MONTH = 'month'
 COUNT = 'count'
 GCP = 'gcp'
+AZURE = 'azure'
 
 # Inline keyboard constants
 UNDO = 'undo'

@@ -4,16 +4,18 @@ from azure.cognitiveservices.vision.contentmoderator import ContentModeratorClie
 from datetime import date
 from dotenv import load_dotenv
 from google.cloud import vision, datastore
+from msrest.authentication import CognitiveServicesCredentials
 from telegram import Chat, ChatAction
 
 from group_defender.constants import *
-from group_defender.utils import filter_msg, get_setting
+from group_defender.utils import filter_msg, get_settings
 
 load_dotenv()
 AZURE_TOKEN = os.environ.get('AZURE_TOKEN')
+AZURE_LOC = os.environ.get('AZURE_LOC')
 
 if AZURE_TOKEN is None:
-    AZURE_TOKEN = get_setting('AZURE_TOKEN')
+    AZURE_TOKEN, AZURE_LOC = get_settings(['AZURE_TOKEN', 'AZURE_LOC'])
 
 
 def check_photo(update, context, file_id, file_name):
@@ -67,23 +69,10 @@ def scan_photo(file_name=None, file_url=None):
     is_safe = likelihood = None
     if GCP not in entities or entities[GCP] <= GCP_LIMIT:
         is_safe, likelihood = gcp_scan(file_name, file_url)
-        with client.transaction():
-            key = client.key(API_COUNT, f'{GCP}{curr_year}{curr_month}')
-            entity = client.get(key)
-
-            if entity is None:
-                entity = datastore.Entity(key)
-                count = 1
-            else:
-                count = entity[COUNT] + 1
-
-            entity.update({
-                NAME: GCP,
-                COUNT: count,
-                YEAR: curr_year,
-                MONTH: curr_month
-            })
-            client.put(entity)
+        update_api_count(client, GCP, curr_year, curr_month)
+    elif AZURE not in entities or entities[AZURE] <= AZURE_LIMIT:
+        is_safe, likelihood = azure_scan(file_name, file_url)
+        update_api_count(client, AZURE, curr_year, curr_month)
 
     return is_safe, likelihood
 
@@ -114,3 +103,57 @@ def gcp_scan(file_name=None, file_url=None):
     is_safe = all(x < GCP_THRESHOLD for x in results)
 
     return is_safe, GCP_LIKELIHOODS[max(results)]
+
+
+def azure_scan(file_name=None, file_url=None):
+    client = ContentModeratorClient(
+        f'https://{AZURE_LOC}.api.cognitive.microsoft.com/', CognitiveServicesCredentials(AZURE_TOKEN))
+    if file_name is not None:
+        evaluation = client.image_moderation.evaluate_file_input(
+            image_stream=open(file_name, 'rb'),
+            cache_image=True
+        )
+    else:
+        evaluation = client.image_moderation.evaluate_url_input(
+            content_type="application/json",
+            cache_image=True,
+            data_representation="URL",
+            value=file_url
+        )
+
+    results = [evaluation.adult_classification_score, evaluation.racy_classification_score]
+    is_safe = all(x < AZURE_THRESHOLD for x in results)
+    max_score = max(results)
+
+    if max_score >= 0.9:
+        likelihood = 'very likely'
+    elif max_score >= 0.75:
+        likelihood = 'likely'
+    elif max_score >= 0.5:
+        likelihood = 'possible'
+    elif max_score >= 0.25:
+        likelihood = 'unlikely'
+    else:
+        likelihood = 'very unlikely'
+
+    return is_safe, likelihood
+
+
+def update_api_count(client, name, curr_year, curr_month):
+    with client.transaction():
+        key = client.key(API_COUNT, f'{name}{curr_year}{curr_month}')
+        entity = client.get(key)
+
+        if entity is None:
+            entity = datastore.Entity(key)
+            count = 1
+        else:
+            count = entity[COUNT] + 1
+
+        entity.update({
+            NAME: name,
+            COUNT: count,
+            YEAR: curr_year,
+            MONTH: curr_month
+        })
+        client.put(entity)
