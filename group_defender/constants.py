@@ -53,6 +53,8 @@ MONTH = 'month'
 COUNT = 'count'
 GCP = 'gcp'
 AZURE = 'azure'
+BOT_COUNT = 'Bot_Count'
+FILE = 'file'
 
 # Inline keyboard constants
 UNDO = 'undo'
