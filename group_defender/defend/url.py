@@ -163,20 +163,23 @@ def check_file_photo(urls):
     photo_safe_list = []
 
     for url in urls:
-        mime_type = mimetypes.guess_type(url)
-        if mime_type[0] is not None:
-            if not scan_file(file_url=url)[0]:
-                is_file_safe = False
-                file_safe_list.append(False)
-            else:
-                file_safe_list.append(True)
-
-            if is_file_safe and mime_type[0].startswith('image'):
+        mime_type = mimetypes.guess_type(url)[0]
+        if mime_type is not None:
+            if mime_type.startswith('image'):
                 if not scan_photo(file_url=url)[0]:
                     is_photo_safe = False
                     photo_safe_list.append(False)
                 else:
                     photo_safe_list.append(True)
+
+            if is_photo_safe:
+                if not scan_file(file_url=url)[0]:
+                    is_file_safe = False
+                    file_safe_list.append(False)
+                else:
+                    file_safe_list.append(True)
+            else:
+                file_safe_list = [True] * len(urls)
 
     if not is_file_safe or not is_photo_safe:
         safe_list = [a if not a else b for a, b in zip(file_safe_list, photo_safe_list)]
