@@ -1,3 +1,5 @@
+import secrets
+
 from datetime import datetime, timedelta
 from google.cloud import datastore
 from telegram import Chat, ChatMember, InlineKeyboardButton, InlineKeyboardMarkup
@@ -98,6 +100,9 @@ def restore_msg(context, query, chat_id, msg_id):
         msg_text = msg[MSG_TEXT]
 
         keyboard = [[InlineKeyboardButton(text="Delete (Cannot be undone)", callback_data=f'{DELETE},{msg_id}')]]
+        if secrets.randbelow(2):
+            keyboard.append([InlineKeyboardButton('Support Group Defender', callback_data=PAYMENT)])
+
         reply_markup = InlineKeyboardMarkup(keyboard)
 
         if file_id is not None:

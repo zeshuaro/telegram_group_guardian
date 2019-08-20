@@ -1,10 +1,12 @@
+import secrets
+
 from google.cloud import datastore
 from telegram import ReplyKeyboardRemove, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.error import BadRequest
 from telegram.ext import ConversationHandler
 from telegram.ext.dispatcher import run_async
 
-from group_defender.constants import UNDO, SETTING, VALUE
+from group_defender.constants import UNDO, SETTING, VALUE, PAYMENT
 from group_defender.store import store_msg
 
 
@@ -58,8 +60,11 @@ def filter_msg(update, context, file_id, file_type, text):
 
     try:
         update.message.delete()
-
         keyboard = [[InlineKeyboardButton(text='Undo', callback_data=f'{UNDO},{msg_id}')]]
+
+        if secrets.randbelow(2):
+            keyboard.append([InlineKeyboardButton('Support Group Defender', callback_data=PAYMENT)])
+
         reply_markup = InlineKeyboardMarkup(keyboard)
         context.bot.send_message(chat_id, text, reply_markup=reply_markup)
     except BadRequest:
