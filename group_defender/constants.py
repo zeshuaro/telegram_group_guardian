@@ -30,9 +30,9 @@ PENDING = 'pending'
 FAILED = 'failed'
 
 # Google Vision constants
-SAFE_ANN_LIKELIHOODS = ['unknown', 'very unlikely', 'unlikely', 'possible', 'likely', 'very likely']
-SAFE_ANN_TYPES = ['adult', 'spoof', 'medical', 'violence', 'racy']
-SAFE_ANN_THRESHOLD = 3
+GCP_LIKELIHOODS = ['unknown', 'very unlikely', 'unlikely', 'possible', 'likely', 'very likely']
+GCP_THRESHOLD = 3
+GCP_LIMIT = 950
 
 # Google Datastore constants
 MSG = 'Message'
@@ -43,6 +43,12 @@ MSG_TEXT = 'message_text'
 EXPIRY = 'expiry'
 SETTING = 'Setting'
 VALUE = 'value'
+API_COUNT = 'API_Count'
+NAME = 'name'
+YEAR = 'year'
+MONTH = 'month'
+COUNT = 'count'
+GCP = 'gcp'
 
 # Inline keyboard constants
 UNDO = 'undo'
