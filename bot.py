@@ -50,6 +50,7 @@ def main():
     dispatcher.add_handler(CommandHandler('help', help_msg))
     dispatcher.add_handler(CommandHandler('donate', send_payment_options))
     dispatcher.add_handler(CommandHandler('send', send, Filters.user(DEV_TELE_ID)))
+    dispatcher.add_handler(CommandHandler('stats', get_stats, Filters.user(DEV_TELE_ID)))
 
     # Callback query handler
     dispatcher.add_handler(CallbackQueryHandler(process_callback_query))

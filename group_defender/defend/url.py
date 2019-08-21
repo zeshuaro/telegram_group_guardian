@@ -4,15 +4,17 @@ import os
 import re
 import requests
 
+from collections import defaultdict
 from dotenv import load_dotenv
 from requests.exceptions import ConnectionError
 from telegram import Chat, ChatAction, ChatMember, MessageEntity
 from telegram.ext.dispatcher import run_async
 
-from group_defender.constants import URL
+from group_defender.constants import URL, FILE, PHOTO
 from group_defender.defend.file import scan_file
 from group_defender.defend.photo import scan_photo
 from group_defender.utils import filter_msg, get_setting
+from group_defender.stats import update_stats
 
 
 load_dotenv()
@@ -46,10 +48,11 @@ def check_url(update, context):
     active_urls = get_active_urls(urls)
     is_url_safe, safe_list = scan_url(active_urls)
     is_file_safe = is_photo_safe = True
+    counts = {}
 
     if is_url_safe:
         update.message.chat.send_action(ChatAction.TYPING)
-        is_file_safe, is_photo_safe, safe_list = check_file_photo(urls)
+        is_file_safe, is_photo_safe, safe_list, counts = check_file_photo(urls)
 
     chat_type = update.message.chat.type
     if not is_url_safe or not is_file_safe or not is_photo_safe:
@@ -81,6 +84,9 @@ def check_url(update, context):
                 update.message.reply_text('I couldn\'t check the link(s) as they are unavailable.', quote=True)
             else:
                 update.message.reply_text('I think the link(s) are safe.', quote=True)
+
+    counts.update({URL: len(urls)})
+    update_stats(counts)
 
 
 def get_active_urls(urls):
@@ -161,11 +167,14 @@ def check_file_photo(urls):
     is_file_safe = is_photo_safe = True
     file_safe_list = []
     photo_safe_list = []
+    counts = defaultdict(int)
 
     for url in urls:
         mime_type = mimetypes.guess_type(url)[0]
         if mime_type is not None:
+            counts[FILE] += 1
             if mime_type.startswith('image'):
+                counts[PHOTO] += 1
                 if not scan_photo(file_url=url)[0]:
                     is_photo_safe = False
                     photo_safe_list.append(False)
@@ -186,4 +195,4 @@ def check_file_photo(urls):
     else:
         safe_list = [True] * len(urls)
 
-    return is_file_safe, is_photo_safe, safe_list
+    return is_file_safe, is_photo_safe, safe_list, counts

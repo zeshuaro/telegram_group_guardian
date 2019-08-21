@@ -3,13 +3,16 @@ from google.cloud import datastore
 from group_defender.constants import BOT_COUNT, COUNT, FILE, PHOTO
 
 
-def update_stats(count_key, num_count=1):
+def update_stats(counts):
     client = datastore.Client()
+    keys = [client.key(BOT_COUNT, x) for x in counts.keys()]
+
     with client.transaction():
-        count_key = client.key(BOT_COUNT, count_key)
-        count = client.get(key=count_key)
-        count[COUNT] += num_count
-        client.put(count)
+        entities = client.get_multi(keys)
+        for entity in entities:
+            entity[COUNT] += counts[entity.key.name]
+
+        client.put_multi(entities)
 
 
 def get_stats(update, _):

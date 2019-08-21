@@ -8,9 +8,10 @@ from telegram import Chat, ChatMember, ChatAction
 from telegram.constants import MAX_FILESIZE_DOWNLOAD
 from telegram.ext.dispatcher import run_async
 
-from group_defender.constants import AUDIO, DOCUMENT, PHOTO, VIDEO, OK, FOUND, WARNING, FAILED
+from group_defender.constants import AUDIO, DOCUMENT, PHOTO, VIDEO, OK, FOUND, WARNING, FAILED, FILE
 from group_defender.defend.photo import check_photo
 from group_defender.utils import filter_msg, get_setting
+from group_defender.stats import update_stats
 
 load_dotenv()
 SCANNER_TOKEN = os.environ.get('SCANNER_TOKEN')
@@ -63,6 +64,7 @@ def process_file(update, context):
 
         if file_type == PHOTO or file.mime_type.startswith('image'):
             is_safe = check_photo(update, context, file_id, file_name)
+            update_stats({FILE: 1, PHOTO: 1})
 
         if is_safe is None or is_safe:
             check_file(update, context, file_id, file_name, file_type)
