@@ -19,7 +19,7 @@ if AZURE_TOKEN is None:
     AZURE_TOKEN, AZURE_LOC = get_settings(['AZURE_TOKEN', 'AZURE_LOC'])
 
 
-def check_photo(update, context, file_id, file_name):
+def check_photo(update, context, file_id, file_name, file_type):
     """
     Check if the photo is safe or not
     Args:
@@ -27,6 +27,7 @@ def check_photo(update, context, file_id, file_name):
         context: the context object
         file_id: the int of the file ID
         file_name: the string of the file name
+        file_type: the string of the file type
 
     Returns:
         None
@@ -41,7 +42,7 @@ def check_photo(update, context, file_id, file_name):
             if chat_type in (Chat.GROUP, Chat.SUPERGROUP):
                 text = f'I deleted a photo that\'s {likelihood} to contain ' \
                     f'NSFW content (sent by @{update.message.from_user.username}).'
-                filter_msg(update, context, file_id, PHOTO, text)
+                filter_msg(update, context, file_id, file_type, text)
             else:
                 update.message.reply_text(f'I think it\'s {likelihood} to contain NSFW content.', quote=True)
         else:

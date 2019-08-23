@@ -63,7 +63,7 @@ def process_file(update, context):
         is_safe = True
 
         if file_type == PHOTO or file.mime_type.startswith('image'):
-            is_safe = check_photo(update, context, file_id, file_name)
+            is_safe = check_photo(update, context, file_id, file_name, file_type)
             update_stats({FILE: 1, PHOTO: 1})
 
         if is_safe is None or is_safe:
