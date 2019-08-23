@@ -62,7 +62,7 @@ def check_url(update, context):
             content = 'a virus or malware'
 
         if chat_type in (Chat.GROUP, Chat.SUPERGROUP):
-            text = f'I deleted a message that contains links with {content} ' \
+            text = f'I\'ve deleted a message that contains links with {content} ' \
                 f'(sent by @{update.message.from_user.username}).'
             filter_msg(update, context, None, URL, text)
         else:

@@ -40,7 +40,7 @@ def check_photo(update, context, file_id, file_name, file_type):
         if not is_safe:
             # Delete message if it is a group chat
             if chat_type in (Chat.GROUP, Chat.SUPERGROUP):
-                text = f'I deleted a photo that\'s {likelihood} to contain ' \
+                text = f'I\'ve deleted a photo that\'s {likelihood} to contain ' \
                     f'NSFW content (sent by @{update.message.from_user.username}).'
                 filter_msg(update, context, file_id, file_type, text)
             else:

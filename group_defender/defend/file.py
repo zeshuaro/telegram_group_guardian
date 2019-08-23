@@ -90,7 +90,7 @@ def check_file(update, context, file_id, file_name, file_type):
     if not is_safe:
         threat_type = 'contains' if status == FOUND else 'may contain'
         if chat_type in (Chat.GROUP, Chat.SUPERGROUP):
-            text = f'I deleted a {file_type} that {threat_type} a virus or malware ' \
+            text = f'I\'ve deleted a {file_type} that {threat_type} a virus or malware ' \
                 f'(sent by @{update.message.from_user.username}).'
             filter_msg(update, context, file_id, file_type, text)
         else:
