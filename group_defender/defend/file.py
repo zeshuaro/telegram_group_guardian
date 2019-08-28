@@ -4,11 +4,12 @@ import tempfile
 
 from dotenv import load_dotenv
 from logbook import Logger
+from moviepy.editor import VideoFileClip
 from telegram import Chat, ChatMember, ChatAction
 from telegram.constants import MAX_FILESIZE_DOWNLOAD
 from telegram.ext.dispatcher import run_async
 
-from group_defender.constants import AUDIO, DOCUMENT, PHOTO, VIDEO, OK, FOUND, WARNING, FAILED, FILE
+from group_defender.constants import AUDIO, DOCUMENT, PHOTO, VIDEO, OK, FOUND, WARNING, FAILED, FILE, ANIMATION
 from group_defender.defend.photo import check_photo
 from group_defender.utils import filter_msg, get_setting
 from group_defender.stats import update_stats
@@ -39,10 +40,11 @@ def process_file(update, context):
         return
 
     # Get the received file
-    files = [update.message.audio, update.message.document, update.message.photo, update.message.video]
+    files = [update.message.animation, update.message.audio, update.message.document, update.message.video,
+             update.message.photo]
     index, file = next(x for x in enumerate(files) if x[1] is not None)
 
-    file_types = (AUDIO, DOCUMENT, PHOTO, VIDEO)
+    file_types = (ANIMATION, AUDIO, DOCUMENT, VIDEO, PHOTO)
     file_type = file_types[index]
     file = file[-1] if file_type == PHOTO else file
     file_size = file.file_size
@@ -55,14 +57,26 @@ def process_file(update, context):
 
         return
 
-    with tempfile.NamedTemporaryFile() as tf:
-        tele_file = file.get_file()
-        file_id = tele_file.file_id
-        file_name = tf.name
+    with tempfile.NamedTemporaryFile() as tf1, tempfile.NamedTemporaryFile(suffix='.gif') as tf2:
+        file_id = file.file_id
+        file_size = file.file_size
+        file_name = tf1.name
+
+        tele_file = context.bot.get_file(file_id)
         tele_file.download(file_name)
         is_safe = True
 
-        if file_type == PHOTO or file.mime_type.startswith('image'):
+        # Convert animation to gif
+        if file_type == ANIMATION:
+            clip = VideoFileClip(tf1.name)
+            clip.write_gif(tf2.name, program='ffmpeg', logger=None)
+            file_size = os.path.getsize(tf2.name)
+
+            if file_size <= MAX_FILESIZE_DOWNLOAD:
+                file_name = tf2.name
+
+        if file_size <= MAX_FILESIZE_DOWNLOAD and \
+                (file_type in [ANIMATION, PHOTO] or file.mime_type.startswith('image')):
             is_safe = check_photo(update, context, file_id, file_name, file_type)
             update_stats({FILE: 1, PHOTO: 1})
 

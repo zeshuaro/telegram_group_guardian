@@ -115,6 +115,8 @@ def restore_msg(context, query, chat_id, msg_id):
                 context.bot.send_video(chat_id, file_id, caption=caption, reply_markup=reply_markup)
             elif file_type == DOCUMENT:
                 context.bot.send_document(chat_id, file_id, caption=caption, reply_markup=reply_markup)
+            elif file_type == ANIMATION:
+                context.bot.send_animation(chat_id, file_id, caption=caption, reply_markup=reply_markup)
         else:
             context.bot.send_message(chat_id, f"@{username} sent this:\n{msg_text}", reply_markup=reply_markup)
     else:

@@ -15,6 +15,7 @@ PAYMENT_DICT = {PAYMENT_THANKS: 1, PAYMENT_COFFEE: 3, PAYMENT_BEER: 5, PAYMENT_M
 WAIT_PAYMENT = 0
 
 # File types
+ANIMATION = 'animation'
 AUDIO = 'audio'
 DOCUMENT = 'document'
 PHOTO = 'photo'
