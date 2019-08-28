@@ -10,6 +10,7 @@ from telegram import Chat, ChatAction
 
 from group_defender.constants import *
 from group_defender.utils import filter_msg, get_settings
+from group_defender.store import datastore_client
 
 load_dotenv()
 AZURE_TOKEN = os.environ.get('AZURE_TOKEN')
@@ -60,8 +61,7 @@ def scan_photo(file_name=None, file_url=None):
     curr_year = curr_datetime.year
     curr_month = curr_datetime.month
 
-    client = datastore.Client()
-    query = client.query(kind=API_COUNT)
+    query = datastore_client.query(kind=API_COUNT)
     query.add_filter(YEAR, '=', curr_year)
     query.add_filter(MONTH, '=', curr_month)
     entities = {}
@@ -72,10 +72,10 @@ def scan_photo(file_name=None, file_url=None):
     is_safe = likelihood = None
     if GCP not in entities or entities[GCP] <= GCP_LIMIT:
         is_safe, likelihood = gcp_scan(file_name, file_url)
-        update_api_count(client, GCP, curr_year, curr_month)
+        update_api_count(datastore_client, GCP, curr_year, curr_month)
     elif AZURE not in entities or entities[AZURE] <= AZURE_LIMIT:
         is_safe, likelihood = azure_scan(file_name, file_url)
-        update_api_count(client, AZURE, curr_year, curr_month)
+        update_api_count(datastore_client, AZURE, curr_year, curr_month)
     else:
         log = Logger()
         log.warn('Vision scan tokens exhausted')

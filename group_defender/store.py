@@ -7,6 +7,8 @@ from telegram.error import BadRequest
 
 from group_defender.constants import *
 
+datastore_client = datastore.Client()
+
 
 def store_msg(chat_id, msg_id, username, file_id, file_type, msg_text):
     """
@@ -22,8 +24,7 @@ def store_msg(chat_id, msg_id, username, file_id, file_type, msg_text):
     Returns:
         None
     """
-    client = datastore.Client()
-    msg_key = client.key(MSG, f'{chat_id},{msg_id}')
+    msg_key = datastore_client.key(MSG, f'{chat_id},{msg_id}')
     msg = datastore.Entity(msg_key)
     msg.update({
         USERNAME: username,
@@ -32,7 +33,7 @@ def store_msg(chat_id, msg_id, username, file_id, file_type, msg_text):
         MSG_TEXT: msg_text,
         EXPIRY: datetime.utcnow() + timedelta(days=MSG_LIFETIME)
     })
-    client.put(msg)
+    datastore_client.put(msg)
 
 
 def process_msg(update, context):
@@ -82,12 +83,11 @@ def restore_msg(context, query, chat_id, msg_id):
         None
     """
     query.message.edit_text('Retrieving message')
-    client = datastore.Client()
-    msg_key = client.key(MSG, f'{chat_id},{msg_id}')
-    msg = client.get(msg_key)
+    msg_key = datastore_client.key(MSG, f'{chat_id},{msg_id}')
+    msg = datastore_client.get(msg_key)
 
     if msg is not None:
-        client.delete(msg_key)
+        datastore_client.delete(msg_key)
 
         try:
             query.message.delete()
@@ -138,9 +138,8 @@ def delete_expired_msg(_):
     Returns:
         None
     """
-    client = datastore.Client()
-    query = client.query(kind=MSG)
+    query = datastore_client.query(kind=MSG)
     query.add_filter(EXPIRY, '<', datetime.utcnow())
     query.keys_only()
     keys = [x.key for x in query.fetch()]
-    client.delete_multi(keys)
+    datastore_client.delete_multi(keys)
