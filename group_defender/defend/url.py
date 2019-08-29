@@ -6,7 +6,6 @@ import requests
 
 from collections import defaultdict
 from dotenv import load_dotenv
-from requests.exceptions import ConnectionError
 from telegram import Chat, ChatAction, ChatMember, MessageEntity
 from telegram.ext.dispatcher import run_async
 
@@ -109,7 +108,7 @@ def get_active_urls(urls):
             r = requests.get(url)
             if r.status_code == 200:
                 active_urls.append(url)
-        except ConnectionError:
+        except requests.exceptions.ConnectionError:
             continue
 
     return active_urls
