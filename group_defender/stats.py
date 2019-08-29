@@ -24,6 +24,6 @@ def get_stats(update, _):
         else:
             count_url += counts[COUNT]
 
-    update.message.reply_text(
+    update.effective_message.reply_text(
         f'Processed files: {count_file}\nProcessed photos: {count_photo}\nProcessed urls: {count_url}\n'
         f'Total: {count_file + count_url}')

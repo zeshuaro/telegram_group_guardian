@@ -33,25 +33,26 @@ def check_photo(update, context, file_id, file_name, file_type):
     Returns:
         None
     """
-    update.message.chat.send_action(ChatAction.TYPING)
+    message = update.effective_message
+    message.chat.send_action(ChatAction.TYPING)
     is_safe, likelihood = scan_photo(file_name)
-    chat_type = update.message.chat.type
+    chat_type = message.chat.type
 
     if is_safe is not None:
         if not is_safe:
             # Delete message if it is a group chat
             if chat_type in (Chat.GROUP, Chat.SUPERGROUP):
                 text = f'I\'ve deleted a photo that\'s {likelihood} to contain ' \
-                    f'NSFW content (sent by @{update.message.from_user.username}).'
+                    f'NSFW content (sent by @{message.from_user.username}).'
                 filter_msg(update, context, file_id, file_type, text)
             else:
-                update.message.reply_text(f'I think it\'s {likelihood} to contain NSFW content.', quote=True)
+                message.reply_text(f'I think it\'s {likelihood} to contain NSFW content.', quote=True)
         else:
             if chat_type == Chat.PRIVATE:
-                update.message.reply_text('I think it doesn\'t contain any NSFW content.', quote=True)
+                message.reply_text('I think it doesn\'t contain any NSFW content.', quote=True)
     else:
         if chat_type == Chat.PRIVATE:
-            update.message.reply_text('Photo scanning is currently unavailable.', quote=True)
+            message.reply_text('Photo scanning is currently unavailable.', quote=True)
 
     return is_safe
 

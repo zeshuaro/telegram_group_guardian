@@ -38,8 +38,8 @@ def payment_cov_handler():
 
 @run_async
 def custom_amount(update, _):
-    update.message.reply_text(f'Send me the amount that you\'ll like to support {BOT_NAME} or /cancel this.',
-                              reply_markup=ReplyKeyboardRemove())
+    update.effective_message.reply_text(f'Send me the amount that you\'ll like to support {BOT_NAME} or /cancel this.',
+                                        reply_markup=ReplyKeyboardRemove())
 
     return WAIT_PAYMENT
 
@@ -47,11 +47,11 @@ def custom_amount(update, _):
 @run_async
 def receive_custom_amount(update, context):
     try:
-        amount = round(float(update.message.text))
+        amount = round(float(update.effective_message.text))
         if amount <= 0:
             raise ValueError
     except ValueError:
-        update.message.reply_text('The amount you sent is invalid, try again.')
+        update.effective_message.reply_text('The amount you sent is invalid, try again.')
 
         return WAIT_PAYMENT
 
@@ -61,9 +61,10 @@ def receive_custom_amount(update, context):
 @run_async
 def send_payment_options(update, context, user_id=None):
     if user_id is None:
-        chat_id = update.message.from_user.id
-        if update.message.chat.type in (Chat.GROUP, Chat.SUPERGROUP):
-            update.message.reply_text('I\'ve PM you the support options.', reply_markup=ReplyKeyboardRemove())
+        message = update.effective_message
+        chat_id = message.from_user.id
+        if message.chat.type in (Chat.GROUP, Chat.SUPERGROUP):
+            message.reply_text('I\'ve PM you the support options.', reply_markup=ReplyKeyboardRemove())
     else:
         chat_id = user_id
 
@@ -75,16 +76,17 @@ def send_payment_options(update, context, user_id=None):
 
 @run_async
 def send_payment_invoice(update, context, amount=None):
-    if update.message.chat.type in (Chat.GROUP, Chat.SUPERGROUP):
-        update.message.reply_text('I\'ve PM you the invoice.', reply_markup=ReplyKeyboardRemove())
+    message = update.effective_message
+    if message.chat.type in (Chat.GROUP, Chat.SUPERGROUP):
+        message.reply_text('I\'ve PM you the invoice.', reply_markup=ReplyKeyboardRemove())
 
-    chat_id = update.message.from_user.id
+    chat_id = message.from_user.id
     title = f'Support {BOT_NAME}'
     description = f'Say thanks to {BOT_NAME} and help keep it running'
 
     if amount is None:
-        label = update.message.text
-        price = PAYMENT_DICT[update.message.text]
+        label = message.text
+        price = PAYMENT_DICT[message.text]
     else:
         label = PAYMENT_CUSTOM
         price = amount
@@ -104,4 +106,4 @@ def precheckout_check(update, _):
 
 
 def successful_payment(update, _):
-    update.message.reply_text('Thank you for your support!', reply_markup=ReplyKeyboardRemove())
+    update.effective_message.reply_text('Thank you for your support!', reply_markup=ReplyKeyboardRemove())

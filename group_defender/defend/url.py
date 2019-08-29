@@ -16,7 +16,6 @@ from group_defender.defend.photo import scan_photo
 from group_defender.utils import filter_msg, get_setting
 from group_defender.stats import update_stats
 
-
 load_dotenv()
 GOOGLE_TOKEN = os.environ.get('GOOGLE_TOKEN')
 
@@ -36,14 +35,15 @@ def check_url(update, context):
         None
     """
     # Check if bot in group and if bot is a group admin, if not, links will not be checked
-    if update.message.chat.type in (Chat.GROUP, Chat.SUPERGROUP) and \
-            context.bot.get_chat_member(update.message.chat_id, context.bot.id).status != ChatMember.ADMINISTRATOR:
-        update.message.reply_text('Set me as a group admin so that I can start checking links like this.')
+    message = update.effective_message
+    if message.chat.type in (Chat.GROUP, Chat.SUPERGROUP) and \
+            context.bot.get_chat_member(message.chat_id, context.bot.id).status != ChatMember.ADMINISTRATOR:
+        message.reply_text('Set me as a group admin so that I can start checking links like this.')
 
         return
 
-    update.message.chat.send_action(ChatAction.TYPING)
-    entities = update.message.parse_entities([MessageEntity.URL])
+    message.chat.send_action(ChatAction.TYPING)
+    entities = message.parse_entities([MessageEntity.URL])
     urls = entities.values()
     active_urls = get_active_urls(urls)
     is_url_safe, safe_list = scan_url(active_urls)
@@ -51,10 +51,10 @@ def check_url(update, context):
     counts = {}
 
     if is_url_safe:
-        update.message.chat.send_action(ChatAction.TYPING)
+        message.chat.send_action(ChatAction.TYPING)
         is_file_safe, is_photo_safe, safe_list, counts = check_file_photo(urls)
 
-    chat_type = update.message.chat.type
+    chat_type = message.chat.type
     if not is_url_safe or not is_file_safe or not is_photo_safe:
         if not is_photo_safe:
             content = 'NSFW content'
@@ -63,7 +63,7 @@ def check_url(update, context):
 
         if chat_type in (Chat.GROUP, Chat.SUPERGROUP):
             text = f'I\'ve deleted a message that contains links with {content} ' \
-                f'(sent by @{update.message.from_user.username}).'
+                   f'(sent by @{message.from_user.username}).'
             filter_msg(update, context, None, URL, text)
         else:
             ordinals = []
@@ -74,16 +74,16 @@ def check_url(update, context):
                     ordinals.append(p.ordinal(i + 1))
 
             if len(urls) == 1:
-                update.message.reply_text(f'I think the link contains {content}, don\'t open it.', quote=True)
+                message.reply_text(f'I think the link contains {content}, don\'t open it.', quote=True)
             else:
-                update.message.reply_text(f'I think the {", ".join(ordinals)} links contain a virus or malware or '
-                                          f'NSFW content, don\'t open them.', quote=True)
+                message.reply_text(f'I think the {", ".join(ordinals)} links contain a virus or '
+                                   f'malware or NSFW content, don\'t open them.', quote=True)
     else:
         if chat_type == Chat.PRIVATE:
             if len(active_urls) == 0:
-                update.message.reply_text('I couldn\'t check the link(s) as they are unavailable.', quote=True)
+                message.reply_text('I couldn\'t check the link(s) as they are unavailable.', quote=True)
             else:
-                update.message.reply_text('I think the link(s) are safe.', quote=True)
+                message.reply_text('I think the link(s) are safe.', quote=True)
 
     counts.update({URL: len(urls)})
     update_stats(counts)

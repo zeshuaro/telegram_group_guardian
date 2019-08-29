@@ -33,15 +33,16 @@ def process_file(update, context):
         None
     """
     # Check if bot in group and if bot is a group admin, if not, files will not be checked
-    if update.message.chat.type in (Chat.GROUP, Chat.SUPERGROUP) and \
-            context.bot.get_chat_member(update.message.chat_id, context.bot.id).status != ChatMember.ADMINISTRATOR:
-        update.message.reply_text('Set me as a group admin so that I can start checking files like this.')
+    message = update.effective_message
+    if message.chat.type in (Chat.GROUP, Chat.SUPERGROUP) and \
+            context.bot.get_chat_member(message.chat_id, context.bot.id).status != ChatMember.ADMINISTRATOR:
+        message.reply_text(
+            'Set me as a group admin so that I can start checking files like this.')
 
         return
 
     # Get the received file
-    files = [update.message.animation, update.message.audio, update.message.document, update.message.video,
-             update.message.photo]
+    files = [message.animation, message.audio, message.document, message.video, message.photo]
     index, file = next(x for x in enumerate(files) if x[1] is not None)
 
     file_types = (ANIMATION, AUDIO, DOCUMENT, VIDEO, PHOTO)
@@ -51,9 +52,9 @@ def process_file(update, context):
 
     # Check if file is too large for bot to download
     if file_size > MAX_FILESIZE_DOWNLOAD:
-        if update.message.chat.type == Chat.PRIVATE:
+        if message.chat.type == Chat.PRIVATE:
             text = f'Your {file_type} is too large for me to download and check.'
-            update.message.reply_text(text)
+            message.reply_text(text)
 
         return
 
@@ -97,27 +98,28 @@ def check_file(update, context, file_id, file_name, file_type):
     Returns:
         None
     """
-    update.message.chat.send_action(ChatAction.TYPING)
+    message = update.effective_message
+    message.chat.send_action(ChatAction.TYPING)
     is_safe, status, matches = scan_file(file_name)
-    chat_type = update.message.chat.type
+    chat_type = message.chat.type
 
     if not is_safe:
         threat_type = 'contains' if status == FOUND else 'may contain'
         if chat_type in (Chat.GROUP, Chat.SUPERGROUP):
             text = f'I\'ve deleted a {file_type} that {threat_type} a virus or malware ' \
-                f'(sent by @{update.message.from_user.username}).'
+                f'(sent by @{message.from_user.username}).'
             filter_msg(update, context, file_id, file_type, text)
         else:
-            update.message.reply_text(
+            message.reply_text(
                 f'I think it {threat_type} a virus or malware, don\'t download or open it.', quote=True)
     else:
         if chat_type == Chat.PRIVATE:
             if status == OK:
-                update.message.reply_text('I think it doesn\'t contain any virus or malware.', quote=True)
+                message.reply_text('I think it doesn\'t contain any virus or malware.', quote=True)
             else:
                 log = Logger()
                 log.error(matches)
-                update.message.reply_text('Something went wrong, try again.', quote=True)
+                message.reply_text('Something went wrong, try again.', quote=True)
 
 
 def scan_file(file_name=None, file_url=None):
