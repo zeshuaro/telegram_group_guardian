@@ -56,6 +56,7 @@ GCP = 'gcp'
 AZURE = 'azure'
 BOT_COUNT = 'Bot_Count'
 FILE = 'file'
+CHAT = 'Chat'
 
 # Inline keyboard constants
 UNDO = 'undo'

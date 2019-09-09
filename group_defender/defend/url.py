@@ -4,12 +4,11 @@ import os
 import re
 import requests
 
-from collections import defaultdict
 from dotenv import load_dotenv
 from telegram import Chat, ChatAction, ChatMember, MessageEntity
 from telegram.ext.dispatcher import run_async
 
-from group_defender.constants import URL, FILE, PHOTO
+from group_defender.constants import URL
 from group_defender.defend.file import scan_file
 from group_defender.defend.photo import scan_photo
 from group_defender.utils import filter_msg, get_setting
@@ -36,7 +35,7 @@ def check_url(update, context):
     # Check if bot in group and if bot is a group admin, if not, links will not be checked
     message = update.effective_message
     if message.chat.type in (Chat.GROUP, Chat.SUPERGROUP) and \
-            context.bot.get_chat_member(message.chat_id, context.bot.id).status != ChatMember.ADMINISTRATOR:
+            message.chat.get_member(context.bot.id).status != ChatMember.ADMINISTRATOR:
         message.reply_text('Set me as a group admin so that I can start checking links like this.')
 
         return
@@ -47,11 +46,10 @@ def check_url(update, context):
     active_urls = get_active_urls(urls)
     is_url_safe, safe_list = scan_url(active_urls)
     is_file_safe = is_photo_safe = True
-    counts = {}
 
     if is_url_safe:
         message.chat.send_action(ChatAction.TYPING)
-        is_file_safe, is_photo_safe, safe_list, counts = check_file_photo(urls)
+        is_file_safe, is_photo_safe, safe_list = check_file_photo(urls)
 
     chat_type = message.chat.type
     if not is_url_safe or not is_file_safe or not is_photo_safe:
@@ -73,19 +71,20 @@ def check_url(update, context):
                     ordinals.append(p.ordinal(i + 1))
 
             if len(urls) == 1:
-                message.reply_text(f'I think the link contains {content}, don\'t open it.', quote=True)
+                message.reply_text(
+                    f'I think the link contains {content}, don\'t open it.', quote=True)
             else:
                 message.reply_text(f'I think the {", ".join(ordinals)} links contain a virus or '
                                    f'malware or NSFW content, don\'t open them.', quote=True)
     else:
         if chat_type == Chat.PRIVATE:
             if len(active_urls) == 0:
-                message.reply_text('I couldn\'t check the link(s) as they are unavailable.', quote=True)
+                message.reply_text(
+                    'I couldn\'t check the link(s) as they are unavailable.', quote=True)
             else:
                 message.reply_text('I think the link(s) are safe.', quote=True)
 
-    counts.update({URL: len(urls)})
-    update_stats(counts)
+    update_stats(message.chat_id, {URL: len(active_urls)})
 
 
 def get_active_urls(urls):
@@ -122,7 +121,8 @@ def scan_url(urls):
         urls:
             the list of urls
     Returns:
-        A tuple of a bool indicating if all the urls are safe and a list indicating the safeness of individual urls
+        A tuple of a bool indicating if all the urls are safe and a list indicating
+        the safeness of individual urls
     """
     is_safe = True
     safe_list = [True] * len(urls)
@@ -131,8 +131,8 @@ def scan_url(urls):
     params = {'key': GOOGLE_TOKEN}
     json = {
         'threatInfo': {
-            'threatTypes': ['THREAT_TYPE_UNSPECIFIED', 'MALWARE', 'SOCIAL_ENGINEERING', 'UNWANTED_SOFTWARE',
-                            'POTENTIALLY_HARMFUL_APPLICATION'],
+            'threatTypes': ['THREAT_TYPE_UNSPECIFIED', 'MALWARE', 'SOCIAL_ENGINEERING',
+                            'UNWANTED_SOFTWARE', 'POTENTIALLY_HARMFUL_APPLICATION'],
             'platformTypes': ['ANY_PLATFORM'],
             'threatEntryTypes': ['URL'],
             'threatEntries': [{'url': url} for url in urls]
@@ -160,20 +160,17 @@ def check_file_photo(urls):
         urls: the list of urls
 
     Returns:
-        A tuple of a bool indicating if the file is safe if exists, a bool indicating if the photo is safe if exists,
-        and a list indicating the safeness of individual urls
+        A tuple of a bool indicating if the file is safe if exists, a bool indicating
+        if the photo is safe if exists, and a list indicating the safeness of individual urls
     """
     is_file_safe = is_photo_safe = True
     file_safe_list = []
     photo_safe_list = []
-    counts = defaultdict(int)
 
     for url in urls:
         mime_type = mimetypes.guess_type(url)[0]
         if mime_type is not None:
-            counts[FILE] += 1
             if mime_type.startswith('image'):
-                counts[PHOTO] += 1
                 if not scan_photo(file_url=url)[0]:
                     is_photo_safe = False
                     photo_safe_list.append(False)
@@ -194,4 +191,4 @@ def check_file_photo(urls):
     else:
         safe_list = [True] * len(urls)
 
-    return is_file_safe, is_photo_safe, safe_list, counts
+    return is_file_safe, is_photo_safe, safe_list

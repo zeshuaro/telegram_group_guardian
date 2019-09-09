@@ -1,19 +1,27 @@
-from group_defender.constants import BOT_COUNT, COUNT, FILE, PHOTO
-from group_defender.store import datastore_client
+from google.cloud import datastore
+
+from group_defender.constants import BOT_COUNT, COUNT, FILE, PHOTO, CHAT
+from group_defender.store import datastore_client as client
 
 
-def update_stats(counts):
-    keys = [datastore_client.key(BOT_COUNT, x) for x in counts.keys()]
-    with datastore_client.transaction():
-        entities = datastore_client.get_multi(keys)
-        for entity in entities:
-            entity[COUNT] += counts[entity.key.name]
+def update_stats(chat_id, counts):
+    key = client.key(CHAT, chat_id)
+    with client.transaction():
+        chat = client.get(key)
+        if chat is None:
+            chat = datastore.Entity(key)
 
-        datastore_client.put_multi(entities)
+        for file_type in counts:
+            if file_type in chat:
+                chat[file_type] += counts[file_type]
+            else:
+                chat[file_type] = 1
+
+        client.put(chat)
 
 
 def get_stats(update, _):
-    query = datastore_client.query(kind=BOT_COUNT)
+    query = client.query(kind=BOT_COUNT)
     count_file = count_photo = count_url = 0
 
     for counts in query.fetch():

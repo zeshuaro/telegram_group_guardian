@@ -9,7 +9,8 @@ from telegram import Chat, ChatMember, ChatAction
 from telegram.constants import MAX_FILESIZE_DOWNLOAD
 from telegram.ext.dispatcher import run_async
 
-from group_defender.constants import AUDIO, DOCUMENT, PHOTO, VIDEO, OK, FOUND, WARNING, FAILED, FILE, ANIMATION
+from group_defender.constants import AUDIO, DOCUMENT, PHOTO, VIDEO, OK, FOUND, WARNING, FAILED, \
+    ANIMATION
 from group_defender.defend.photo import check_photo
 from group_defender.utils import filter_msg, get_setting
 from group_defender.stats import update_stats
@@ -35,7 +36,7 @@ def process_file(update, context):
     # Check if bot in group and if bot is a group admin, if not, files will not be checked
     message = update.effective_message
     if message.chat.type in (Chat.GROUP, Chat.SUPERGROUP) and \
-            context.bot.get_chat_member(message.chat_id, context.bot.id).status != ChatMember.ADMINISTRATOR:
+            message.chat.get_member(context.bot.id).status != ChatMember.ADMINISTRATOR:
         message.reply_text(
             'Set me as a group admin so that I can start checking files like this.')
 
@@ -65,7 +66,6 @@ def process_file(update, context):
 
         tele_file = context.bot.get_file(file_id)
         tele_file.download(file_name)
-        is_safe = True
 
         # Convert animation to gif
         if file_type == ANIMATION:
@@ -76,13 +76,14 @@ def process_file(update, context):
             if file_size <= MAX_FILESIZE_DOWNLOAD:
                 file_name = tf2.name
 
-        if file_size <= MAX_FILESIZE_DOWNLOAD and \
-                (file_type in [ANIMATION, PHOTO] or file.mime_type.startswith('image')):
-            is_safe = check_photo(update, context, file_id, file_name, file_type)
-            update_stats({FILE: 1, PHOTO: 1})
+        if file_size <= MAX_FILESIZE_DOWNLOAD:
+            if file_type in [ANIMATION, PHOTO] or file.mime_type.startswith('image'):
+                is_safe = check_photo(update, context, file_id, file_name, file_type)
 
-        if is_safe is None or is_safe:
-            check_file(update, context, file_id, file_name, file_type)
+            if is_safe is None or is_safe:
+                check_file(update, context, file_id, file_name, file_type)
+
+    update_stats(message.chat_id, {file_type: 1})
 
 
 def check_file(update, context, file_id, file_name, file_type):
@@ -111,7 +112,8 @@ def check_file(update, context, file_id, file_name, file_type):
             filter_msg(update, context, file_id, file_type, text)
         else:
             message.reply_text(
-                f'I think it {threat_type} a virus or malware, don\'t download or open it.', quote=True)
+                f'I think it {threat_type} a virus or malware, don\'t download or open it.',
+                quote=True)
     else:
         if chat_type == Chat.PRIVATE:
             if status == OK:
@@ -130,7 +132,8 @@ def scan_file(file_name=None, file_url=None):
         file_url: the string of the file url
 
     Returns:
-        A tuple of a bool indicating whether the file is safe or not, the status and matches from the API call
+        A tuple of a bool indicating whether the file is safe or not, the status and
+        matches from the API call
     """
     is_safe = True
     status = matches = None
