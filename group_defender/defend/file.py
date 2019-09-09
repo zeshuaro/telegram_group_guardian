@@ -77,6 +77,7 @@ def process_file(update, context):
                 file_name = tf2.name
 
         if file_size <= MAX_FILESIZE_DOWNLOAD:
+            is_safe = True
             if file_type in [ANIMATION, PHOTO] or file.mime_type.startswith('image'):
                 is_safe = check_photo(update, context, file_id, file_name, file_type)
 
