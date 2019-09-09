@@ -21,6 +21,7 @@ DOCUMENT = 'document'
 PHOTO = 'photo'
 VIDEO = 'video'
 URL = 'url'
+FILE_TYPES = [ANIMATION, AUDIO, DOCUMENT, PHOTO, VIDEO, URL]
 
 # Attachment Scanner constants
 OK = 'ok'
@@ -54,7 +55,6 @@ MONTH = 'month'
 COUNT = 'count'
 GCP = 'gcp'
 AZURE = 'azure'
-BOT_COUNT = 'Bot_Count'
 FILE = 'file'
 CHAT = 'Chat'
 
