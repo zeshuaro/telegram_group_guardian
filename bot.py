@@ -82,6 +82,7 @@ def main():
                 | Filters.audio
                 | Filters.document
                 | Filters.photo
+                | Filters.sticker
                 | Filters.video
             ),
             process_file,

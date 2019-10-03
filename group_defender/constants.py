@@ -19,9 +19,10 @@ ANIMATION = "animation"
 AUDIO = "audio"
 DOCUMENT = "document"
 PHOTO = "photo"
+STICKER = "sticker"
 VIDEO = "video"
 URL = "url"
-FILE_TYPES = [ANIMATION, AUDIO, DOCUMENT, PHOTO, VIDEO, URL]
+FILE_TYPES = [ANIMATION, AUDIO, DOCUMENT, PHOTO, STICKER, VIDEO, URL]
 
 # Attachment Scanner constants
 OK = "ok"

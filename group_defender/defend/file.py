@@ -19,6 +19,7 @@ from group_defender.constants import (
     WARNING,
     FAILED,
     ANIMATION,
+    STICKER,
 )
 from group_defender.defend.photo import check_photo
 from group_defender.utils import filter_msg, get_setting
@@ -33,15 +34,6 @@ if SCANNER_TOKEN is None:
 
 @run_async
 def process_file(update, context):
-    """
-    Process files, including audio, document, photo and video
-    Args:
-        update: the update object
-        context: the context object
-
-    Returns:
-        None
-    """
     # Check if bot in group and if bot is a group admin, if not, files will not be checked
     message = update.effective_message
     if (
@@ -59,12 +51,13 @@ def process_file(update, context):
         message.animation,
         message.audio,
         message.document,
+        message.sticker,
         message.video,
         message.photo,
     ]
     index, file = next(x for x in enumerate(files) if x[1] is not None)
 
-    file_types = (ANIMATION, AUDIO, DOCUMENT, VIDEO, PHOTO)
+    file_types = (ANIMATION, AUDIO, DOCUMENT, STICKER, VIDEO, PHOTO)
     file_type = file_types[index]
     file = file[-1] if file_type == PHOTO else file
     file_size = file.file_size
@@ -72,8 +65,14 @@ def process_file(update, context):
     # Check if file is too large for bot to download
     if file_size > MAX_FILESIZE_DOWNLOAD:
         if message.chat.type == Chat.PRIVATE:
-            text = f"Your {file_type} is too large for me to download and check."
-            message.reply_text(text)
+            message.reply_text(
+                f"Your {file_type} is too large for me to download and check."
+            )
+
+        return
+    elif file_type == STICKER and file.is_animated:
+        if message.chat.type == Chat.PRIVATE:
+            message.reply_text(f"Animated stickers are not supported yet")
 
         return
 
@@ -98,7 +97,9 @@ def process_file(update, context):
 
         if file_size <= MAX_FILESIZE_DOWNLOAD:
             is_safe = True
-            if file_type in [ANIMATION, PHOTO] or file.mime_type.startswith("image"):
+            if file_type in [ANIMATION, PHOTO, STICKER] or file.mime_type.startswith(
+                "image"
+            ):
                 is_safe = check_photo(update, context, file_id, file_name, file_type)
 
             if is_safe is None or is_safe:

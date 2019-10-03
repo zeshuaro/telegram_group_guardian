@@ -114,13 +114,7 @@ def gcp_scan(file_name=None, file_url=None):
     )
 
     safe_ann = response.safe_search_annotation
-    results = [
-        safe_ann.adult,
-        safe_ann.spoof,
-        safe_ann.medical,
-        safe_ann.violence,
-        safe_ann.racy,
-    ]
+    results = [safe_ann.adult, safe_ann.medical, safe_ann.violence, safe_ann.racy]
     is_safe = all(x < GCP_THRESHOLD for x in results)
 
     return is_safe, GCP_LIKELIHOODS[max(results)]
