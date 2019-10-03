@@ -15,15 +15,15 @@ SLACK_TOKEN = os.environ.get("SLACK_TOKEN")
 VALID_LANGS = ("en", "zh-hk", "zh-tw", "zh-cn")
 
 if SLACK_TOKEN is None:
-    SLACK_TOKEN = get_setting('SLACK_TOKEN')
+    SLACK_TOKEN = get_setting("SLACK_TOKEN")
 
 
 # Creates a feedback conversation handler
 def feedback_cov_handler():
     conv_handler = ConversationHandler(
-        entry_points=[CommandHandler('feedback', feedback)],
+        entry_points=[CommandHandler("feedback", feedback)],
         states={0: [MessageHandler(Filters.text, receive_feedback)]},
-        fallbacks=[CommandHandler("cancel", cancel)]
+        fallbacks=[CommandHandler("cancel", cancel)],
     )
 
     return conv_handler
@@ -40,8 +40,10 @@ def feedback(update, _):
     Returns:
         The variable indicating to wait for feedback
     """
-    update.effective_message.reply_text("Send me your feedback or /cancel this operation. "
-                                        "My developer can understand English and Chinese.")
+    update.effective_message.reply_text(
+        "Send me your feedback or /cancel this operation. "
+        "My developer can understand English and Chinese."
+    )
 
     return 0
 
@@ -75,20 +77,24 @@ def receive_feedback(update, _):
 
         return 0
 
-    text = "Feedback received from @{} ({}):\n\n{}".format(tele_username, tele_id, feedback_msg)
+    text = "Feedback received from @{} ({}):\n\n{}".format(
+        tele_username, tele_id, feedback_msg
+    )
     success = False
 
     if SLACK_TOKEN is not None:
         client = WebClient(token=SLACK_TOKEN)
         response = client.chat_postMessage(channel="#grp-def-feedback", text=text)
 
-        if response['ok'] and response['message']['text'] == text:
+        if response["ok"] and response["message"]["text"] == text:
             success = True
 
     if not success:
         log = Logger()
         log.notice(text)
 
-    message.reply_text("Thank you for your feedback, I've already forwarded it to my developer.")
+    message.reply_text(
+        "Thank you for your feedback, I've already forwarded it to my developer."
+    )
 
     return ConversationHandler.END

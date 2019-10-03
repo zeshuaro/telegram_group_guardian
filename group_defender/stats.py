@@ -27,9 +27,9 @@ def get_stats(update, _):
 
     for chat in query.fetch():
         if chat.key.id > 0:
-            counts['num_users'] += 1
+            counts["num_users"] += 1
         else:
-            counts['num_groups'] += 1
+            counts["num_groups"] += 1
 
         for file_type in FILE_TYPES:
             if file_type in chat:
@@ -40,10 +40,10 @@ def get_stats(update, _):
 
     for file_type in FILE_TYPES:
         if file_type in counts:
-            text += f'Processed {file_type}: {counts[file_type]}\n'
+            text += f"Processed {file_type}: {counts[file_type]}\n"
             total += counts[file_type]
         else:
-            text += f'Processed {file_type}: 0\n'
+            text += f"Processed {file_type}: 0\n"
 
-    text += f'\nTotal processed: {total}'
+    text += f"\nTotal processed: {total}"
     update.effective_message.reply_text(text)

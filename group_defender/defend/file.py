@@ -9,17 +9,26 @@ from telegram import Chat, ChatMember, ChatAction
 from telegram.constants import MAX_FILESIZE_DOWNLOAD
 from telegram.ext.dispatcher import run_async
 
-from group_defender.constants import AUDIO, DOCUMENT, PHOTO, VIDEO, OK, FOUND, WARNING, FAILED, \
-    ANIMATION
+from group_defender.constants import (
+    AUDIO,
+    DOCUMENT,
+    PHOTO,
+    VIDEO,
+    OK,
+    FOUND,
+    WARNING,
+    FAILED,
+    ANIMATION,
+)
 from group_defender.defend.photo import check_photo
 from group_defender.utils import filter_msg, get_setting
 from group_defender.stats import update_stats
 
 load_dotenv()
-SCANNER_TOKEN = os.environ.get('SCANNER_TOKEN')
+SCANNER_TOKEN = os.environ.get("SCANNER_TOKEN")
 
 if SCANNER_TOKEN is None:
-    SCANNER_TOKEN = get_setting('SCANNER_TOKEN')
+    SCANNER_TOKEN = get_setting("SCANNER_TOKEN")
 
 
 @run_async
@@ -35,15 +44,24 @@ def process_file(update, context):
     """
     # Check if bot in group and if bot is a group admin, if not, files will not be checked
     message = update.effective_message
-    if message.chat.type in (Chat.GROUP, Chat.SUPERGROUP) and \
-            message.chat.get_member(context.bot.id).status != ChatMember.ADMINISTRATOR:
+    if (
+        message.chat.type in (Chat.GROUP, Chat.SUPERGROUP)
+        and message.chat.get_member(context.bot.id).status != ChatMember.ADMINISTRATOR
+    ):
         message.reply_text(
-            'Set me as a group admin so that I can start checking files like this.')
+            "Set me as a group admin so that I can start checking files like this."
+        )
 
         return
 
     # Get the received file
-    files = [message.animation, message.audio, message.document, message.video, message.photo]
+    files = [
+        message.animation,
+        message.audio,
+        message.document,
+        message.video,
+        message.photo,
+    ]
     index, file = next(x for x in enumerate(files) if x[1] is not None)
 
     file_types = (ANIMATION, AUDIO, DOCUMENT, VIDEO, PHOTO)
@@ -54,12 +72,14 @@ def process_file(update, context):
     # Check if file is too large for bot to download
     if file_size > MAX_FILESIZE_DOWNLOAD:
         if message.chat.type == Chat.PRIVATE:
-            text = f'Your {file_type} is too large for me to download and check.'
+            text = f"Your {file_type} is too large for me to download and check."
             message.reply_text(text)
 
         return
 
-    with tempfile.NamedTemporaryFile() as tf1, tempfile.NamedTemporaryFile(suffix='.gif') as tf2:
+    with tempfile.NamedTemporaryFile() as tf1, tempfile.NamedTemporaryFile(
+        suffix=".gif"
+    ) as tf2:
         file_id = file.file_id
         file_size = file.file_size
         file_name = tf1.name
@@ -70,7 +90,7 @@ def process_file(update, context):
         # Convert animation to gif
         if file_type == ANIMATION:
             clip = VideoFileClip(tf1.name)
-            clip.write_gif(tf2.name, program='ffmpeg', logger=None)
+            clip.write_gif(tf2.name, program="ffmpeg", logger=None)
             file_size = os.path.getsize(tf2.name)
 
             if file_size <= MAX_FILESIZE_DOWNLOAD:
@@ -78,7 +98,7 @@ def process_file(update, context):
 
         if file_size <= MAX_FILESIZE_DOWNLOAD:
             is_safe = True
-            if file_type in [ANIMATION, PHOTO] or file.mime_type.startswith('image'):
+            if file_type in [ANIMATION, PHOTO] or file.mime_type.startswith("image"):
                 is_safe = check_photo(update, context, file_id, file_name, file_type)
 
             if is_safe is None or is_safe:
@@ -106,23 +126,28 @@ def check_file(update, context, file_id, file_name, file_type):
     chat_type = message.chat.type
 
     if not is_safe:
-        threat_type = 'contains' if status == FOUND else 'may contain'
+        threat_type = "contains" if status == FOUND else "may contain"
         if chat_type in (Chat.GROUP, Chat.SUPERGROUP):
-            text = f'I\'ve deleted a {file_type} that {threat_type} a virus or malware ' \
-                f'(sent by @{message.from_user.username}).'
+            text = (
+                f"I've deleted a {file_type} that {threat_type} a virus or malware "
+                f"(sent by @{message.from_user.username})."
+            )
             filter_msg(update, context, file_id, file_type, text)
         else:
             message.reply_text(
-                f'I think it {threat_type} a virus or malware, don\'t download or open it.',
-                quote=True)
+                f"I think it {threat_type} a virus or malware, don't download or open it.",
+                quote=True,
+            )
     else:
         if chat_type == Chat.PRIVATE:
             if status == OK:
-                message.reply_text('I think it doesn\'t contain any virus or malware.', quote=True)
+                message.reply_text(
+                    "I think it doesn't contain any virus or malware.", quote=True
+                )
             else:
                 log = Logger()
                 log.error(matches)
-                message.reply_text('Something went wrong, try again.', quote=True)
+                message.reply_text("Something went wrong, try again.", quote=True)
 
 
 def scan_file(file_name=None, file_url=None):
@@ -138,22 +163,22 @@ def scan_file(file_name=None, file_url=None):
     """
     is_safe = True
     status = matches = None
-    url = 'https://beta.attachmentscanner.com/v0.1/scans'
-    headers = {'authorization': f'bearer {SCANNER_TOKEN}'}
+    url = "https://beta.attachmentscanner.com/v0.1/scans"
+    headers = {"authorization": f"bearer {SCANNER_TOKEN}"}
 
     if file_name is not None:
-        files = {'file': open(file_name, 'rb')}
+        files = {"file": open(file_name, "rb")}
         r = requests.post(url, headers=headers, files=files)
     else:
-        json = {'url': file_url}
+        json = {"url": file_url}
         r = requests.post(url, headers=headers, json=json)
 
     if r.status_code == 200:
         results = r.json()
-        status = results['status']
+        status = results["status"]
 
         if status == FAILED:
-            matches = results['matches']
+            matches = results["matches"]
 
     if status in (FOUND, WARNING):
         is_safe = False

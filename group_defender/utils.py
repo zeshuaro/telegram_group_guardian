@@ -34,7 +34,9 @@ def cancel(update, _):
     Returns:
         The variable indicating the conversation has ended
     """
-    update.effective_message.reply_text('Operation cancelled.', reply_markup=ReplyKeyboardRemove())
+    update.effective_message.reply_text(
+        "Operation cancelled.", reply_markup=ReplyKeyboardRemove()
+    )
 
     return ConversationHandler.END
 
@@ -55,18 +57,25 @@ def filter_msg(update, context, file_id, file_type, text):
     message = update.effective_message
     chat_id = message.chat_id
     msg_id = message.message_id
-    store_msg(chat_id, msg_id, message.from_user.username, file_id, file_type,
-              message.text)
+    store_msg(
+        chat_id, msg_id, message.from_user.username, file_id, file_type, message.text
+    )
 
     try:
         message.delete()
-        keyboard = [[InlineKeyboardButton(text='Undo', callback_data=f'{UNDO},{msg_id}')]]
+        keyboard = [
+            [InlineKeyboardButton(text="Undo", callback_data=f"{UNDO},{msg_id}")]
+        ]
 
         if secrets.randbelow(2):
-            keyboard.append([InlineKeyboardButton('Support Group Defender', callback_data=PAYMENT)])
+            keyboard.append(
+                [InlineKeyboardButton("Support Group Defender", callback_data=PAYMENT)]
+            )
 
         reply_markup = InlineKeyboardMarkup(keyboard)
         context.bot.send_message(chat_id, text, reply_markup=reply_markup)
     except BadRequest:
-        message.reply_text('I was not able to delete this unsafe message.\n\n'
-                           'Go to group admin settings and ensure that "Delete Messages" is on for me.')
+        message.reply_text(
+            "I was not able to delete this unsafe message.\n\n"
+            'Go to group admin settings and ensure that "Delete Messages" is on for me.'
+        )

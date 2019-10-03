@@ -15,10 +15,10 @@ from group_defender.utils import filter_msg, get_setting
 from group_defender.stats import update_stats
 
 load_dotenv()
-GOOGLE_TOKEN = os.environ.get('GOOGLE_TOKEN')
+GOOGLE_TOKEN = os.environ.get("GOOGLE_TOKEN")
 
 if GOOGLE_TOKEN is None:
-    GOOGLE_TOKEN = get_setting('GOOGLE_TOKEN')
+    GOOGLE_TOKEN = get_setting("GOOGLE_TOKEN")
 
 
 @run_async
@@ -34,9 +34,13 @@ def check_url(update, context):
     """
     # Check if bot in group and if bot is a group admin, if not, links will not be checked
     message = update.effective_message
-    if message.chat.type in (Chat.GROUP, Chat.SUPERGROUP) and \
-            message.chat.get_member(context.bot.id).status != ChatMember.ADMINISTRATOR:
-        message.reply_text('Set me as a group admin so that I can start checking links like this.')
+    if (
+        message.chat.type in (Chat.GROUP, Chat.SUPERGROUP)
+        and message.chat.get_member(context.bot.id).status != ChatMember.ADMINISTRATOR
+    ):
+        message.reply_text(
+            "Set me as a group admin so that I can start checking links like this."
+        )
 
         return
 
@@ -54,13 +58,15 @@ def check_url(update, context):
     chat_type = message.chat.type
     if not is_url_safe or not is_file_safe or not is_photo_safe:
         if not is_photo_safe:
-            content = 'NSFW content'
+            content = "NSFW content"
         else:
-            content = 'a virus or malware'
+            content = "a virus or malware"
 
         if chat_type in (Chat.GROUP, Chat.SUPERGROUP):
-            text = f'I\'ve deleted a message that contains links with {content} ' \
-                   f'(sent by @{message.from_user.username}).'
+            text = (
+                f"I've deleted a message that contains links with {content} "
+                f"(sent by @{message.from_user.username})."
+            )
             filter_msg(update, context, None, URL, text)
         else:
             ordinals = []
@@ -72,17 +78,22 @@ def check_url(update, context):
 
             if len(urls) == 1:
                 message.reply_text(
-                    f'I think the link contains {content}, don\'t open it.', quote=True)
+                    f"I think the link contains {content}, don't open it.", quote=True
+                )
             else:
-                message.reply_text(f'I think the {", ".join(ordinals)} links contain a virus or '
-                                   f'malware or NSFW content, don\'t open them.', quote=True)
+                message.reply_text(
+                    f'I think the {", ".join(ordinals)} links contain a virus or '
+                    f"malware or NSFW content, don't open them.",
+                    quote=True,
+                )
     else:
         if chat_type == Chat.PRIVATE:
             if len(active_urls) == 0:
                 message.reply_text(
-                    'I couldn\'t check the link(s) as they are unavailable.', quote=True)
+                    "I couldn't check the link(s) as they are unavailable.", quote=True
+                )
             else:
-                message.reply_text('I think the link(s) are safe.', quote=True)
+                message.reply_text("I think the link(s) are safe.", quote=True)
 
     update_stats(message.chat_id, {URL: len(active_urls)})
 
@@ -98,10 +109,10 @@ def get_active_urls(urls):
     """
     active_urls = []
     for url in urls:
-        if url.startswith('https://'):
-            url = re.sub(r'^https://', 'http://', url)
-        elif not url.startswith('http://'):
-            url = f'http://{url}'
+        if url.startswith("https://"):
+            url = re.sub(r"^https://", "http://", url)
+        elif not url.startswith("http://"):
+            url = f"http://{url}"
 
         try:
             r = requests.get(url)
@@ -127,28 +138,33 @@ def scan_url(urls):
     is_safe = True
     safe_list = [True] * len(urls)
 
-    safe_browsing_url = 'https://safebrowsing.googleapis.com/v4/threatMatches:find'
-    params = {'key': GOOGLE_TOKEN}
+    safe_browsing_url = "https://safebrowsing.googleapis.com/v4/threatMatches:find"
+    params = {"key": GOOGLE_TOKEN}
     json = {
-        'threatInfo': {
-            'threatTypes': ['THREAT_TYPE_UNSPECIFIED', 'MALWARE', 'SOCIAL_ENGINEERING',
-                            'UNWANTED_SOFTWARE', 'POTENTIALLY_HARMFUL_APPLICATION'],
-            'platformTypes': ['ANY_PLATFORM'],
-            'threatEntryTypes': ['URL'],
-            'threatEntries': [{'url': url} for url in urls]
+        "threatInfo": {
+            "threatTypes": [
+                "THREAT_TYPE_UNSPECIFIED",
+                "MALWARE",
+                "SOCIAL_ENGINEERING",
+                "UNWANTED_SOFTWARE",
+                "POTENTIALLY_HARMFUL_APPLICATION",
+            ],
+            "platformTypes": ["ANY_PLATFORM"],
+            "threatEntryTypes": ["URL"],
+            "threatEntries": [{"url": url} for url in urls],
         }
     }
     r = requests.post(safe_browsing_url, params=params, json=json)
 
     if r.status_code == 200:
         results = r.json()
-        if 'matches' in results and results['matches']:
+        if "matches" in results and results["matches"]:
             is_safe = False
-            matches = results['matches']
+            matches = results["matches"]
             urls_dict = {k: v for v, k in enumerate(urls)}
 
             for match in matches:
-                safe_list[urls_dict[match['threat']['url']]] = False
+                safe_list[urls_dict[match["threat"]["url"]]] = False
 
     return is_safe, safe_list
 
@@ -170,7 +186,7 @@ def check_file_photo(urls):
     for url in urls:
         mime_type = mimetypes.guess_type(url)[0]
         if mime_type is not None:
-            if mime_type.startswith('image'):
+            if mime_type.startswith("image"):
                 if not scan_photo(file_url=url)[0]:
                     is_photo_safe = False
                     photo_safe_list.append(False)
