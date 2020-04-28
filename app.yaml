@@ -2,5 +2,8 @@ runtime: python37
 entrypoint: python bot.py
 
 handlers:
-- url: .*
-  script: auto
+  - url: .*
+    script: auto
+
+automatic_scaling:
+  - max_instances: 1
