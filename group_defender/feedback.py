@@ -12,7 +12,6 @@ from group_defender.utils import cancel, get_setting
 
 load_dotenv()
 SLACK_TOKEN = os.environ.get("SLACK_TOKEN")
-VALID_LANGS = ("en", "zh-hk", "zh-tw", "zh-cn")
 
 if SLACK_TOKEN is None:
     SLACK_TOKEN = get_setting("SLACK_TOKEN")
@@ -41,8 +40,8 @@ def feedback(update, _):
         The variable indicating to wait for feedback
     """
     update.effective_message.reply_text(
-        "Send me your feedback or /cancel this operation. "
-        "My developer can understand English and Chinese."
+        "Send me your feedback or /cancel this action. "
+        "Note that only English feedback will be forwarded to my developer."
     )
 
     return 0
@@ -72,8 +71,8 @@ def receive_feedback(update, _):
     except TranslatorError:
         pass
 
-    if not feedback_lang or feedback_lang.lower() not in VALID_LANGS:
-        message.reply_text("The feedback is not in English or Chinese, try again.")
+    if not feedback_lang or feedback_lang.lower() != "en":
+        message.reply_text("The feedback is not in English, try again.")
 
         return 0
 
