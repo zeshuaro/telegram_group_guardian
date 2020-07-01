@@ -9,7 +9,7 @@
 
 A utility bot for group chats on Telegram that can:
 
-* Filter files and links that may contain virus or malwares\n
+* ~~Filter files and links that may contain virus or malwares~~ *The current API the bot uses service is no longer available*
 * Filter photos and links of photos that are NSFW
 
 ## Getting Started
@@ -22,9 +22,8 @@ Run the following command to install the required packages:
 pip install -r requirements.txt
 ```
 
-The bot uses [Google Cloud Vision](https://cloud.google.com/vision/) to check for inappropriate content in images, 
-[Google Safe Browsing](https://developers.google.com/safe-browsing/) to check for threats in links, and
- [Attachment Scanner](http://www.attachmentscanner.com/) to scan for virus and malware.
+The bot uses [Google Cloud Vision](https://cloud.google.com/vision/) to check for inappropriate content in images, and
+[Google Safe Browsing](https://developers.google.com/safe-browsing/) to check for threats in links..
 
 ### Setup Your Environment Variables
 
@@ -32,7 +31,6 @@ Make a .env file and put your telegram token in there. Below is an example:
 
 ```bash
 TELE_TOKEN="telegram_token"
-SCANNER_TOKEN="scanner_token"
 GOOGLE_TOKEN="google_token"
 ```
 

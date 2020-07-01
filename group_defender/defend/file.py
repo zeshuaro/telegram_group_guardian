@@ -102,8 +102,8 @@ def process_file(update, context):
             ):
                 is_safe = check_photo(update, context, file_id, file_name, file_type)
 
-            if is_safe is None or is_safe:
-                check_file(update, context, file_id, file_name, file_type)
+            # if is_safe is None or is_safe:
+            #     check_file(update, context, file_id, file_name, file_type)
 
     update_stats(message.chat_id, {file_type: 1})
 

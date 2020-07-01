@@ -180,7 +180,7 @@ def check_file_photo(urls):
         if the photo is safe if exists, and a list indicating the safeness of individual urls
     """
     is_file_safe = is_photo_safe = True
-    file_safe_list = []
+    file_safe_list = [True] * len(urls)
     photo_safe_list = []
 
     for url in urls:
@@ -193,14 +193,14 @@ def check_file_photo(urls):
                 else:
                     photo_safe_list.append(True)
 
-            if is_photo_safe:
-                if not scan_file(file_url=url)[0]:
-                    is_file_safe = False
-                    file_safe_list.append(False)
-                else:
-                    file_safe_list.append(True)
-            else:
-                file_safe_list = [True] * len(urls)
+            # if is_photo_safe:
+            #     if not scan_file(file_url=url)[0]:
+            #         is_file_safe = False
+            #         file_safe_list.append(False)
+            #     else:
+            #         file_safe_list.append(True)
+            # else:
+            #     file_safe_list = [True] * len(urls)
 
     if not is_file_safe or not is_photo_safe:
         safe_list = [a if not a else b for a, b in zip(file_safe_list, photo_safe_list)]

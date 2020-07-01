@@ -143,7 +143,7 @@ def start_msg(update, context):
     context.bot.send_message(
         update.message.from_user.id,
         "Welcome to Group Defender!\n\n*Features*\n"
-        "- Filter files and links that may contain virus or malwares\n"
+        # "- Filter files and links that may contain virus or malwares\n"
         "- Filter photos and animations and links of them that are NSFW\n\n"
         "Type /help to see how to use Group Defender.",
         parse_mode=ParseMode.MARKDOWN,
